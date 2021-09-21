@@ -115,7 +115,7 @@ namespace TradeController
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var userChoise = ShowYNWind("Завершить работу приложения?", "Закрытие главного окна программы");
+            var userChoise = ShowYNWind("Завершить работу приложения?", "Закрытие программу");
             e.Cancel = (userChoise == MessageBoxResult.No);
         }
 
