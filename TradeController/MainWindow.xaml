@@ -1,0 +1,20 @@
+﻿<Window x:Name="fMain" x:Class="TradeController.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TradeController"
+        mc:Ignorable="d"
+        Title="TradeController" Height="363" Width="501" ResizeMode="NoResize" Closing="Window_Closing">
+    <Grid>
+        <Label x:Name="lblPathToKeys" Content="Путь к ключам:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="382" Height="26"/>
+        <Button x:Name="btnSaveParameters" Content="Сохранить" Margin="0,41,19,0" Height="22" VerticalAlignment="Top" Click="btnSaveParameters_Click" HorizontalAlignment="Right" Width="84" IsEnabled="False"/>
+        <Label x:Name="lblBorder" Content="Нижний порог баланса ($):" HorizontalAlignment="Left" Margin="9,39,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="tbBorder" Margin="167,41,109,0" VerticalAlignment="Top" Height="22" />
+        <Button x:Name="btnAction" Content="Запуск мониторинга" Margin="0,68,19,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="160" Click="btnAction_Click" IsEnabled="False"/>
+        <Label x:Name="lblDeveloper" Content="Разработчик: Иван TG: @JohnSeena Mail: osmiwol@yandex.ru" Margin="19,0,10,10" Height="26" VerticalAlignment="Bottom"/>
+        <TextBlock x:Name="tbInfo" Margin="14,93,0,0" Text="Доп. информация:" TextWrapping="Wrap" Height="213" VerticalAlignment="Top" HorizontalAlignment="Left" Width="468"/>
+        <Button x:Name="btnChooseKeys" Content="Указать файл" Margin="0,10,19,0" Height="26" VerticalAlignment="Top" HorizontalAlignment="Right" Width="84" Click="btnChooseKeys_Click"/>
+
+    </Grid>
+</Window>
