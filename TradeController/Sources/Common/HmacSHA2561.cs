@@ -8,79 +8,33 @@ namespace TradeController.Sources.Common
 {
     class HmacSHA256
     {
-        // Computes a keyed hash for a source file and creates a target file with the keyed hash
-        // prepended to the contents of the source file.
-        public static void SignFile(byte[] key, String sourceFile, String destFile)
+        public static string SighText(string text, string key)
         {
+            string result = "";
+
+            byte[] byteKey = System.Text.Encoding.UTF8.GetBytes(key);
             // Initialize the keyed hash object.
-            using (HMACSHA256 hmac = new HMACSHA256(key))
+            using (HMACSHA256 hmac = new HMACSHA256(byteKey))
             {
-                using (FileStream inStream = new FileStream(sourceFile, FileMode.Open))
+                byte[] byteArray = Encoding.ASCII.GetBytes(text);
+                using (MemoryStream stream = new MemoryStream(byteArray))
                 {
-                    using (FileStream outStream = new FileStream(destFile, FileMode.Create))
-                    {
-                        // Compute the hash of the input file.
-                        byte[] hashValue = hmac.ComputeHash(inStream);
-                        // Reset inStream to the beginning of the file.
-                        inStream.Position = 0;
-                        // Write the computed hash value to the output file.
-                        outStream.Write(hashValue, 0, hashValue.Length);
-                        // Copy the contents of the sourceFile to the destFile.
-                        int bytesRead;
-                        // read 1K at a time
-                        byte[] buffer = new byte[1024];
-                        do
-                        {
-                            // Read from the wrapping CryptoStream.
-                            bytesRead = inStream.Read(buffer, 0, 1024);
-                            outStream.Write(buffer, 0, bytesRead);
-                        } while (bytesRead > 0);
-                    }
+                    byte[] arr = hmac.ComputeHash(stream);
+                    result = Serialize(arr);
                 }
             }
-            return;
-        } // end SignFile
 
-        // Compares the key in the source file with a new key created for the data portion of the file. If the keys
-        // compare the data has not been tampered with.
-        public static bool VerifyFile(byte[] key, String sourceFile)
+            return result;
+        }
+
+        public static string Serialize(byte[] data)
         {
-            bool err = false;
-            // Initialize the keyed hash object.
-            using (HMACSHA256 hmac = new HMACSHA256(key))
-            {
-                // Create an array to hold the keyed hash value read from the file.
-                byte[] storedHash = new byte[hmac.HashSize / 8];
-                // Create a FileStream for the source file.
-                using (FileStream inStream = new FileStream(sourceFile, FileMode.Open))
-                {
-                    // Read in the storedHash.
-                    inStream.Read(storedHash, 0, storedHash.Length);
-                    // Compute the hash of the remaining contents of the file.
-                    // The stream is properly positioned at the beginning of the content,
-                    // immediately after the stored hash value.
-                    byte[] computedHash = hmac.ComputeHash(inStream);
-                    // compare the computed hash with the stored value
+            StringBuilder result = new StringBuilder();
 
-                    for (int i = 0; i < storedHash.Length; i++)
-                    {
-                        if (computedHash[i] != storedHash[i])
-                        {
-                            err = true;
-                        }
-                    }
-                }
-            }
-            if (err)
-            {
-                Console.WriteLine("Hash values differ! Signed file has been tampered with!");
-                return false;
-            }
-            else
-            {
-                Console.WriteLine("Hash values agree -- no tampering occurred.");
-                return true;
-            }
-        } //end VerifyFile
+            foreach (byte b in data)
+                result.Append(string.Format("{0:x2}", b));
+
+            return result.ToString();
+        }
     }
 }

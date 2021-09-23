@@ -1,4 +1,5 @@
-﻿ using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -14,8 +15,7 @@ namespace TradeController.Sources
         Action<string> _dataFieldShow;
         Action _dataFieldClean;
         CancellationToken _ct;
-        string _openKey = "";
-        string _closeKey = "";
+        
         public void AddDataShower(Action<string> action) => _dataFieldShow += action;
         public void AddDataCleaner(Action action) => _dataFieldClean += action;
         string _restartAndMessage = "\nПожалуйста, попробуйте перезапустить приложение и сообщите разработчику.";
@@ -23,12 +23,13 @@ namespace TradeController.Sources
 
         public void StartMonitoring(CancellationTokenSource cts, string pathToKeys, int lowBorder)
         {
-            if(cts == null)
+            
+            if (cts == null)
             {
                 _dataFieldShow?.Invoke("Ошибка! Токен не был передан!" + _restartAndMessage);
                 return;
             }
-            if (StringChecker.IsStringEmpty(pathToKeys))
+            if (string.IsNullOrEmpty(pathToKeys))
             {
                 _dataFieldShow?.Invoke("Ошибка! Путь к файлу с ключами не был указан!" + _restartAndMessage);
                 return;
@@ -52,10 +53,20 @@ namespace TradeController.Sources
                 return;
             }
 
-            _ct = cts.Token;            
-            _openKey = keys[0];
+            _ct = cts.Token;
+
+            IAccountService accountService = new AccountService();
+            string result = accountService.GetAccountInformation(keys[0], keys[1]);
+
+            JObject jObject = JObject.Parse(result);
             
+
+
+
         }
+
+
+
 
         public void StopMonitoring()
         {

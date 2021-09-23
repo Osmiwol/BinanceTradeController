@@ -7,8 +7,8 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
 {
     interface IAccountService 
     {
-        public string GetAccountInformation(string Api);
+        public string GetAccountInformation(string openKey,string secretKey);
 
-        public Stream GetAccountInformationStream(string Api);
+        public Stream GetAccountInformationStream(string key);
     }
 }

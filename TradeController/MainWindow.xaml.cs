@@ -73,12 +73,12 @@ namespace TradeController
         private void btnSaveParameters_Click(object sender, RoutedEventArgs e)
         {
 
-            if (StringChecker.IsStringEmpty(_pathToKeys))
+            if (string.IsNullOrEmpty(_pathToKeys))
             { 
                 MessageBox.Show("Не указан путь к файлу с ключами!", "Внимание!", MessageBoxButton.OK);
                 return;
             }
-            if (StringChecker.IsStringEmpty(tbBorder.Text))
+            if (string.IsNullOrEmpty(tbBorder.Text))
             {
                 MessageBox.Show("Введены не все данные!", "Внимание!", MessageBoxButton.OK);
                 return;
