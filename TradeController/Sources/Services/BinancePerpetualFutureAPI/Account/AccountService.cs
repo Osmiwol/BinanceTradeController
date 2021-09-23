@@ -11,35 +11,31 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
     class AccountService : IAccountService
     {
         string url = "https://fapi.binance.com";
+        string parTimeStamp = "timestamp=";
+        string parSignature = "signature=";
+        
+        int parTimeStampNow;
+        HttpWebRequest requestGetAccountData;
+        HttpWebResponse responseAccountData;
         public string GetAccountInformation(string openKey, string closeKey)
-        {
-            string result = "";
-            if (string.IsNullOrEmpty(openKey)) return result;
+        {            
+            if (string.IsNullOrEmpty(openKey)) return "";
+            
+            parTimeStampNow = TimeManager.GetTimeStamp();
+            string signature = HmacSHA256.SighText(parTimeStamp + parTimeStampNow + "123", closeKey);
+            string parGetAccountPath = @$"/fapi/v2/account?{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
 
-            int tsNow = TimeManager.GetTimeStamp();
-            long timeNow = TimeManager.ConvertToUnixTime(DateTime.Now);
+            requestGetAccountData = (HttpWebRequest)WebRequest.Create(url + parGetAccountPath);
+            requestGetAccountData.Headers.Add(HttpRequestHeader.ContentType, "application/json");
+            requestGetAccountData.Headers.Add("X-MBX-APIKEY", openKey);
+            requestGetAccountData.Headers.Add(HttpRequestHeader.Accept, "*/*");
+            requestGetAccountData.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
+            requestGetAccountData.Date = DateTime.Now;
 
-            string timeParameter = $"timestamp={tsNow}333";
+            responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
+            Stream stream = responseAccountData.GetResponseStream();
 
-            //string timeParameter = $"timestamp=1632305994009";
-            string subscribe = HmacSHA256.SighText(timeParameter, closeKey);
-
-            string signature = $"signature={subscribe}";
-            string CheckServerTime = @$"/fapi/v2/account?{timeParameter}&{signature}";
-
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url + CheckServerTime);
-            request.Headers.Add(HttpRequestHeader.ContentType, "application/json");
-            request.Headers.Add("X-MBX-APIKEY", openKey);
-            request.Headers.Add(HttpRequestHeader.Accept, "*/*");
-            request.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
-            request.Date = DateTime.Now;
-
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            Stream stream = response.GetResponseStream();
-            StreamReader sr = new StreamReader(stream);
-            result = sr.ReadToEnd();
-
-            return result;
+            return new StreamReader(stream).ReadToEnd();
         }
 
         public Stream GetAccountInformationStream(string Api)

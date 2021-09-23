@@ -27,6 +27,8 @@ namespace TradeController.Sources.Common
             return result;
         }
 
+
+
         public static string Serialize(byte[] data)
         {
             StringBuilder result = new StringBuilder();

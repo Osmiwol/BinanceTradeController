@@ -109,8 +109,8 @@ namespace TradeController
                 _pathToKeys = OPF.FileName;
                 lblPathToKeys.Content = "Путь к ключам: " + _pathToKeys;
                 btnSaveParameters.IsEnabled = true;
-            }            
-                
+            }
+            
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

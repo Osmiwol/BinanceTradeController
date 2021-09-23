@@ -15,11 +15,15 @@ namespace TradeController.Sources
         Action<string> _dataFieldShow;
         Action _dataFieldClean;
         CancellationToken _ct;
-        
+        IAccountService accountService;
+        int _lowBorder = 0;
+
         public void AddDataShower(Action<string> action) => _dataFieldShow += action;
         public void AddDataCleaner(Action action) => _dataFieldClean += action;
         string _restartAndMessage = "\nПожалуйста, попробуйте перезапустить приложение и сообщите разработчику.";
 
+        string pathToLog = @$"С:\____MYTRADELogs\";
+        string fileName = "log.txt";
 
         public void StartMonitoring(CancellationTokenSource cts, string pathToKeys, int lowBorder)
         {
@@ -45,28 +49,41 @@ namespace TradeController.Sources
                 return;
             }
 
-            string[] keys = KeysParser.GetKeys(FileReader.GetTextFromFile(pathToKeys));
+            string[] keys = KeysParser.GetKeys(FileManager.GetTextFromFile(pathToKeys));
             if (keys.Length < 2)
             {
                 _dataFieldClean();
                 _dataFieldShow("Ошибка! В файле присутствует только один из ключей!");
                 return;
             }
-
+            _lowBorder = lowBorder;
             _ct = cts.Token;
 
-            IAccountService accountService = new AccountService();
-            string result = accountService.GetAccountInformation(keys[0], keys[1]);
-
-            JObject jObject = JObject.Parse(result);
+            accountService = new AccountService();
+            Thread monitoringProcess = new Thread(new ParameterizedThreadStart(Monitoring));
+            _dataFieldShow("\nЗапущен поток получения данных!");
+            monitoringProcess.Start(keys);
             
-
-
-
         }
 
+        private void Monitoring(object o)
+        {            
+            string[] keys = (string[])o;
+            JObject accountData;
+            string log = "\t\t\tSTART Monitoring at time: "+DateTime.Now.ToString()+"\n";
+            int iteration = 1;
+            while (!_ct.IsCancellationRequested)
+            {
+                Thread.Sleep(100);
+                accountData = JObject.Parse(accountService.GetAccountInformation(keys[0], keys[1]));                
+                log += $"\n\t\t\tIteration:{iteration} " + DateTime.Now.ToString() + "\n" + accountData;
+                iteration++;
+            }
+            log += "\t\t\tEND Monitoring at time: " + DateTime.Now.ToString() + "\n";
+            FileManager.WtrineInFile(pathToLog, fileName, log);
+        }
 
-
+        
 
         public void StopMonitoring()
         {
@@ -85,24 +102,6 @@ namespace TradeController.Sources
             return result;
         }
 
-        /*
-public void StartCheckBalance(CancellationTokenSource cts, string api,int lowBorder)
-{
-    if (cts == null || api == null || api.Length < 5 || lowBorder < 0)
-    {
-        _dataFieldClean?.Invoke();
-        _dataFieldShow?.Invoke("\nОШИБКА! Не удалось запустить мониторинг! \nОдин из параметров не установлен!");
-        return;
-    }
-
-    IAccountService accService = new AccountService();
-    string result = accService.GetAccountInformation(api);
-
-    _dataFieldClean?.Invoke();
-    _dataFieldShow?.Invoke(result);
-
-}
-*/
         #endregion
     }
 }
