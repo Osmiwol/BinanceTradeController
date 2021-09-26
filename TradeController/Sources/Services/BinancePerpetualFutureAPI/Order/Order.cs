@@ -27,14 +27,14 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             if (string.IsNullOrEmpty(openKey)) return "";
 
             client = new HttpClient();
-            
 
-            parTimeStampNow = TimeManager.GetTimeStamp();            
-            string signature = HmacSHA256.SighText("symbol=BTCUSDT&" + parTimeStamp + parTimeStampNow+"123", secretKey);
-            string requestPath = @$"/fapi/v1/allOpenOrders?symbol=BTCUSDT&timestamp={parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
+
+            parTimeStampNow = TimeManager.GetTimeStamp();
+            string signature = HmacSHA256.SighText("symbol=BTCUSDT&" + parTimeStamp + parTimeStampNow + "123", secretKey);
+            string requestPath = @$"/fapi/v1/allOpenOrders?symbol=BTCUSDT&{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
+
+            //Data( openKey,  secretKey);
             
-            Data( openKey,  secretKey);
-            /*
             request = (HttpWebRequest)WebRequest.Create(url + requestPath);
             request.Method = "DELETE";
             request.Headers.Add(HttpRequestHeader.ContentType, "application/json");
@@ -46,10 +46,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             response = (HttpWebResponse)request.GetResponse();
             Stream stream = response.GetResponseStream();
             return new StreamReader(stream).ReadToEnd();
-            */
 
-            //
-            return "";
         }
 
         private async void  Data(string openKey, string secretKey)
