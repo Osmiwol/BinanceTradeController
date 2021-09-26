@@ -7,16 +7,49 @@ using System.Threading;
 using TradeController.Sources.Common;
 using TradeController.Sources.Services.BinancePerpetualFutureAPI;
 using TradeController.Sources.Services.BinancePerpetualFutureAPI.Account;
+using TradeController.Sources.Services.BinancePerpetualFutureAPI.Order;
 
 namespace TradeController.Sources
 {
-    class Controller
+    class Controller : IController
     {
         Action<string> _dataFieldShow;
         Action _dataFieldClean;
         CancellationToken _ct;
         IAccountService accountService;
         int _lowBorder = 0;
+        string[] keys;
+
+        IOrder order;
+        public Controller(CancellationTokenSource cts, string pathToKeys)
+        {
+            if (cts == null)
+            {
+                _dataFieldShow?.Invoke("Ошибка! Токен не был передан!" + _restartAndMessage);
+                return;
+            }
+            _ct = cts.Token;
+
+            if (string.IsNullOrEmpty(pathToKeys))
+            {
+                _dataFieldShow?.Invoke("Ошибка! Путь к файлу с ключами не был указан!" + _restartAndMessage);
+                return;
+            }
+            if (!File.Exists(pathToKeys))
+            {
+                _dataFieldShow?.Invoke("Ошибка! Файл не существует, по указанному пути!" + _restartAndMessage);
+                return;
+            }
+            keys = KeysParser.GetKeys(FileManager.GetTextFromFile(pathToKeys));
+            if (keys.Length < 2)
+            {
+                _dataFieldClean();
+                _dataFieldShow("Ошибка! В файле присутствует только один из ключей!");
+                return;
+            }
+
+            order = new Order();
+        }
 
         public void AddDataShower(Action<string> action) => _dataFieldShow += action;
         public void AddDataCleaner(Action action) => _dataFieldClean += action;
@@ -25,39 +58,15 @@ namespace TradeController.Sources
         string pathToLog = @$"С:\____MYTRADELogs\";
         string fileName = "log.txt";
 
-        public void StartMonitoring(CancellationTokenSource cts, string pathToKeys, int lowBorder)
-        {
-            
-            if (cts == null)
-            {
-                _dataFieldShow?.Invoke("Ошибка! Токен не был передан!" + _restartAndMessage);
-                return;
-            }
-            if (string.IsNullOrEmpty(pathToKeys))
-            {
-                _dataFieldShow?.Invoke("Ошибка! Путь к файлу с ключами не был указан!" + _restartAndMessage);
-                return;
-            }
+        public void StartMonitoring(int lowBorder)
+        {            
             if (lowBorder < 1)
             {
                 _dataFieldShow?.Invoke("Ошибка! Нижняя граница < 1!" + _restartAndMessage);
                 return;
             }
-            if (!File.Exists(pathToKeys))
-            {
-                _dataFieldShow?.Invoke("Ошибка! Файл не существует, по указанному пути!" + _restartAndMessage);
-                return;
-            }
-
-            string[] keys = KeysParser.GetKeys(FileManager.GetTextFromFile(pathToKeys));
-            if (keys.Length < 2)
-            {
-                _dataFieldClean();
-                _dataFieldShow("Ошибка! В файле присутствует только один из ключей!");
-                return;
-            }
+            
             _lowBorder = lowBorder;
-            _ct = cts.Token;
 
             accountService = new AccountService();
             Thread monitoringProcess = new Thread(new ParameterizedThreadStart(Monitoring));
@@ -84,11 +93,14 @@ namespace TradeController.Sources
         }
 
         
-
-        public void StopMonitoring()
-        {
-
+        public void CancelAllOpenOrders()
+        {            
+            string response = order.CancelAllOpenOrders(keys[0], keys[1]);
+            //_dataFieldClean();
+            //_dataFieldShow(response);            
         }
+
+   
 
 
         #region TestMethods

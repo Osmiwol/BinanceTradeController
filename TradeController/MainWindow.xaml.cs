@@ -24,13 +24,15 @@ namespace TradeController
     /// </summary>
     public partial class MainWindow : Window
     {
-        CancellationTokenSource cts = new CancellationTokenSource();        
+        CancellationTokenSource cts;
         int _lowBorder = -1;
         bool _actionMode = false;
         string _pathToKeys = "";
+        IController controller;
         public MainWindow()
         {
             InitializeComponent();
+            cts = new CancellationTokenSource();
         }
 
         private void btnAction_Click(object sender, RoutedEventArgs e)
@@ -39,19 +41,19 @@ namespace TradeController
 
             if (!_actionMode)
             {
-                Controller controller = new Controller();
+                
                 controller.AddDataShower(AddDataToInfo);
                 controller.AddDataCleaner(ClearInfo);
 
                 btnAction.Content = "Остановка мониторинга";
                 tbInfo.Text = "Процесс мониторинга запущен.\n";
-                cts = new CancellationTokenSource();               
+                         
 
                 btnChooseKeys.IsEnabled = false;
                 btnSaveParameters.IsEnabled = false;
                 tbBorder.IsEnabled = false;
 
-                controller.StartMonitoring(cts, _pathToKeys, _lowBorder);
+                controller.StartMonitoring( _lowBorder);
             }
             else
             {
@@ -108,9 +110,21 @@ namespace TradeController
             {
                 _pathToKeys = OPF.FileName;
                 lblPathToKeys.Content = "Путь к ключам: " + _pathToKeys;
+                
+
+                controller = new Controller(cts, _pathToKeys);
+                
                 btnSaveParameters.IsEnabled = true;
+                btnCloseAllDeals.IsEnabled = true;
             }
+
             
+        }
+
+        private void btnCloseAllDeals_Click(object sender, RoutedEventArgs e)
+        {
+            if (ShowYNWind("Вы уверены, что хотите закрыть все позиции?", "Закрыть все позиции?") == MessageBoxResult.Yes)
+                controller.CancelAllOpenOrders();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -124,7 +138,9 @@ namespace TradeController
 
         private void AddDataToInfo(string data) => tbInfo.Text += data;
         private void ClearInfo() => tbInfo.Text = "";
-        
+
+  
+
         #region TestMethods
         private void TestMethod()
         {
@@ -134,13 +150,14 @@ namespace TradeController
 
         private void TestDataShow()
         {
-            Controller controller = new Controller();
+            //Controller controller = new Controller();
             
             controller.AddDataShower(AddDataToInfo);
             controller.AddDataCleaner(ClearInfo);
 
             //controller.StartCheckBalance(null, "asdfjaskdflj", 9000);            
         }
+
 
         #endregion
 

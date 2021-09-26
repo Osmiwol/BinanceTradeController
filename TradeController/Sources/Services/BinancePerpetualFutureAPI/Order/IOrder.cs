@@ -6,6 +6,6 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 {
     interface IOrder
     {
-        public bool CancelAllOpenOrders();
+        public string CancelAllOpenOrders(string openKey, string secretKey);
     }
 }
