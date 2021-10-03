@@ -13,7 +13,7 @@
         <Label x:Name="lblPathToKeys" Content="Путь к ключам:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="382" Height="26"/>
         <Button x:Name="btnSaveParameters" Content="Сохранить" Margin="0,41,19,0" Height="22" VerticalAlignment="Top" Click="btnSaveParameters_Click" HorizontalAlignment="Right" Width="84" IsEnabled="False"/>
         <Label x:Name="lblBorder" Content="Нижний порог баланса ($):" HorizontalAlignment="Left" Margin="9,39,0,0" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbBorder" Margin="167,41,109,0" VerticalAlignment="Top" Height="22" />
+        <TextBox x:Name="tbBorder" Margin="167,41,109,0" VerticalAlignment="Top" Height="22" PreviewTextInput="tbBorder_PreviewTextInput" />
         <Button x:Name="btnAction" Content="Запуск мониторинга" Margin="0,68,19,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="160" Click="btnAction_Click" IsEnabled="False"/>
         <Label x:Name="lblDeveloper" Content="Разработчик: Иван TG: @JohnSeena Mail: osmiwol@yandex.ru" Margin="19,0,134,10" Height="26" VerticalAlignment="Bottom"/>
         <TextBlock x:Name="tbInfo" Margin="14,93,0,75" Text="Доп. информация:" TextWrapping="Wrap" HorizontalAlignment="Left" Width="468"/>

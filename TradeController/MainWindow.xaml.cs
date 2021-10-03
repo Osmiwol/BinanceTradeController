@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -140,28 +141,65 @@ namespace TradeController
         {
             var userChoise = ShowYNWind("Завершить работу приложения?", "Закрытие программу");
             e.Cancel = (userChoise == MessageBoxResult.No);
+            Thread.Sleep(500);
+            cts.Cancel();
         }
 
         private MessageBoxResult ShowYNWind(string text , string header= "Вы уверены?") => MessageBox.Show(text, header, MessageBoxButton.YesNo);
 
 
-        private void HandlerDataToInfo(string data) => Dispatcher.Invoke(() => tbInfo.Text += data);
-        private void HandlerClearInfo() => Dispatcher.Invoke(() => tbInfo.Text = "");
+        private void HandlerDataToInfo(string data) {
+            try { 
+            Dispatcher.Invoke(() => tbInfo.Text += data);
+            }
+            catch(Exception ex)
+            {
+                File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке вывода общей инофрмации!" + ex);
+            }
+}
+        private void HandlerClearInfo() {
+            try{ 
+            Dispatcher.Invoke(() => tbInfo.Text = "");
+        }
+            catch(Exception ex)
+            {
+                File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке очистки поля с информацией !" + ex);
+            }
+}
 
         public void HandlerCommonBalance(float balance)
         {
+            try{ 
             Dispatcher.Invoke(() => lblCommonBalance.Content = balance);
+            }
+            catch(Exception ex)
+            {
+                File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке вывода общего баланса!" + ex);
+            }
         }
 
 
         public void HandlerIter(int iter)
         {
+            try { 
             Dispatcher.Invoke(() => lblIter.Content = iter);
-        }
+            }
+            catch(Exception ex)
+            {
+                File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке вывода значения итераций!" + ex);
+            }
+}
 
         public void HandlerAvailableBalance(float availableBalance)
         {
-            Dispatcher.Invoke(() => lblAvailableBalance.Content = availableBalance);
+            try
+            {
+                Dispatcher.Invoke(() => lblAvailableBalance.Content = availableBalance);
+            }
+            catch(Exception ex)
+            {
+                File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке вывода доступного баланса!" + ex);
+            }
         }
 
 
@@ -184,8 +222,24 @@ namespace TradeController
         }
 
 
+
         #endregion
 
 
+
+        private void tbBorder_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            
+            if (!int.TryParse(e.Text, out int i))
+            {
+                e.Handled = true;
+            }
+            /*
+            if (e.Text == e.Text.ToLower())
+            {
+                e.Handled = true;
+            }
+            */
+        }
     }
 }

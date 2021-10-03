@@ -30,8 +30,8 @@ namespace TradeController.Sources
         //костыльно, но работает
         CloseAllPositions closer;
         AccountFutureBalance balanceFutures;
-        string url = "https://testnet.binancefuture.com";
-        //string url = "https://fapi.binance.com";
+        //string url = "https://testnet.binancefuture.com"; //тестовый url
+        string url = "https://fapi.binance.com";
         //
         public Controller(CancellationTokenSource cts, string pathToKeys)
         {
@@ -125,12 +125,12 @@ namespace TradeController.Sources
                 _availableBalanceShow?.Invoke(futureBalances[1].availableBalance);
                 _balanceShow?.Invoke(futureBalances[1].balance);
 
-                log += $"\n\t\t\tIteration:{iteration} " + DateTime.Now.ToString() + "\n" + $"Общий баланс:{futureBalances[1].balance} Доступный баланс:{futureBalances[1].availableBalance}\n";
+                //log += $"\n\t\t\tIteration:{iteration} " + DateTime.Now.ToString() + "\n" + $"Общий баланс:{futureBalances[1].balance} Доступный баланс:{futureBalances[1].availableBalance}\n";
 
                 iteration++;
                 _iterMonitoring?.Invoke(iteration);
             }
-            Console.WriteLine("Мониторинг остановлен, итераций: " + iteration);
+            log += ("Мониторинг остановлен, итераций: " + iteration);
             log += "\t\t\tEND Monitoring at time: " + DateTime.Now.ToString() + "\n";
 
             File.AppendAllText(@"_LOG_Monitoring.txt", log);
