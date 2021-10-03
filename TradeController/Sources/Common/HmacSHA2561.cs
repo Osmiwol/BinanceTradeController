@@ -38,5 +38,10 @@ namespace TradeController.Sources.Common
 
             return result.ToString();
         }
+
+        internal static string SighText(object p, string closeKey)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

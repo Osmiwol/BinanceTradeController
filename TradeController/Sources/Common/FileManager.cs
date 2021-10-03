@@ -10,7 +10,7 @@ namespace TradeController.Sources.Common
         public static string GetTextFromFile(string path)
         {
             string result = "";
-            if (string.IsNullOrEmpty(path)) return result;            
+            if (string.IsNullOrEmpty(path)) return result;
             if (!File.Exists(path)) return result;
 
             FileStream fs = new FileStream(path, FileMode.Open);
@@ -24,27 +24,5 @@ namespace TradeController.Sources.Common
 
             return result;
         }
-
-        public static bool WtrineInFile(string path, string fileName, string text)
-        {            
-            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(fileName)) return false;
-            
-            DirectoryInfo dirInfo = new DirectoryInfo(path);
-            if (!dirInfo.Exists) dirInfo.Create();           
-
-            // запись в файл
-            using (FileStream fstream = new FileStream(path+fileName, FileMode.OpenOrCreate))
-            {
-                // преобразуем строку в байты
-                byte[] array = System.Text.Encoding.Default.GetBytes(text);
-                // запись массива байтов в файл
-                fstream.Write(array, 0, array.Length);
-            }
-
-
-            return true;
-        }
-
-
     }
 }

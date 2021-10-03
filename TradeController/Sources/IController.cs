@@ -9,7 +9,14 @@ namespace TradeController.Sources
     {
         public void AddDataShower(Action<string> action);
         public void AddDataCleaner(Action action);
-        public void StartMonitoring( int lowBorder);
+
+        public void AddBalanceShow(Action<float> action);
+        public void AddAvailableShow(Action<float> action);
+        public void AddIterMonitoring(Action<int> iter);
+
+        public void StartMonitoring(CancellationTokenSource cts,int lowBorder );
+
+        public void CleanAllEvents();
 
         public void CancelAllOpenOrders();
     }

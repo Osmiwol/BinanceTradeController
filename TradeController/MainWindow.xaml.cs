@@ -41,9 +41,13 @@ namespace TradeController
 
             if (!_actionMode)
             {
-                
-                controller.AddDataShower(AddDataToInfo);
-                controller.AddDataCleaner(ClearInfo);
+                cts = new CancellationTokenSource();
+                controller.AddDataShower(HandlerDataToInfo);
+                controller.AddDataCleaner(HandlerClearInfo);
+
+                controller.AddAvailableShow(HandlerAvailableBalance);
+                controller.AddBalanceShow(HandlerCommonBalance);
+                controller.AddIterMonitoring(HandlerIter);
 
                 btnAction.Content = "Остановка мониторинга";
                 tbInfo.Text = "Процесс мониторинга запущен.\n";
@@ -53,7 +57,7 @@ namespace TradeController
                 btnSaveParameters.IsEnabled = false;
                 tbBorder.IsEnabled = false;
 
-                controller.StartMonitoring( _lowBorder);
+                controller.StartMonitoring(cts, _lowBorder);
             }
             else
             {
@@ -67,6 +71,12 @@ namespace TradeController
                 btnSaveParameters.IsEnabled = true;
                 tbBorder.IsEnabled = true ;
                 tbInfo.Text = "Процесс мониторинга остановлен.\n";
+
+                controller.CleanAllEvents();
+                
+                lblAvailableBalance.Content = "?";
+                lblCommonBalance.Content = "?";
+                
             }
 
             _actionMode = !_actionMode;
@@ -109,8 +119,7 @@ namespace TradeController
             if (OPF.ShowDialog() == true)
             {
                 _pathToKeys = OPF.FileName;
-                lblPathToKeys.Content = "Путь к ключам: " + _pathToKeys;
-                
+                lblPathToKeys.Content = "Путь к ключам: " + _pathToKeys;                
 
                 controller = new Controller(cts, _pathToKeys);
                 
@@ -136,10 +145,26 @@ namespace TradeController
         private MessageBoxResult ShowYNWind(string text , string header= "Вы уверены?") => MessageBox.Show(text, header, MessageBoxButton.YesNo);
 
 
-        private void AddDataToInfo(string data) => tbInfo.Text += data;
-        private void ClearInfo() => tbInfo.Text = "";
+        private void HandlerDataToInfo(string data) => Dispatcher.Invoke(() => tbInfo.Text += data);
+        private void HandlerClearInfo() => Dispatcher.Invoke(() => tbInfo.Text = "");
 
-  
+        public void HandlerCommonBalance(float balance)
+        {
+            Dispatcher.Invoke(() => lblCommonBalance.Content = balance);
+        }
+
+
+        public void HandlerIter(int iter)
+        {
+            Dispatcher.Invoke(() => lblIter.Content = iter);
+        }
+
+        public void HandlerAvailableBalance(float availableBalance)
+        {
+            Dispatcher.Invoke(() => lblAvailableBalance.Content = availableBalance);
+        }
+
+
 
         #region TestMethods
         private void TestMethod()
@@ -151,10 +176,10 @@ namespace TradeController
         private void TestDataShow()
         {
             //Controller controller = new Controller();
-            
+            /*
             controller.AddDataShower(AddDataToInfo);
             controller.AddDataCleaner(ClearInfo);
-
+            */
             //controller.StartCheckBalance(null, "asdfjaskdflj", 9000);            
         }
 

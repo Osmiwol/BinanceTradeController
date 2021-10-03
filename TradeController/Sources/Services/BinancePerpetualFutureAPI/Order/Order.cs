@@ -28,7 +28,6 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 
             client = new HttpClient();
 
-
             parTimeStampNow = TimeManager.GetTimeStamp();
             string signature = HmacSHA256.SighText("symbol=BTCUSDT&" + parTimeStamp + parTimeStampNow + "123", secretKey);
             string requestPath = @$"/fapi/v1/allOpenOrders?symbol=BTCUSDT&{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
@@ -40,14 +39,15 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             request.Headers.Add(HttpRequestHeader.ContentType, "application/json");
             request.Headers.Add("X-MBX-APIKEY", openKey);            
             request.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
-            request.Date = DateTime.Now;
-                        
+            request.Date = DateTime.Now;                        
             
             response = (HttpWebResponse)request.GetResponse();
             Stream stream = response.GetResponseStream();
             return new StreamReader(stream).ReadToEnd();
 
         }
+        //{{url}}/fapi/v1/order?
+        //symbol=BTCUSDT&side=BUY&type=MARKET&quantity=1&reduceOnly=true&newOrderRespType=FULL&timestamp={{timestamp}}&signature={{signature}}
 
         private async void  Data(string openKey, string secretKey)
         {
