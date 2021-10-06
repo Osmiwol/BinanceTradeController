@@ -11,7 +11,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
     {
         string path = "";
         string local = "/fapi/v1/order?";
-        string url;
+        
         const string parSignature = "signature=";
         string type = "";
 
@@ -19,12 +19,18 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
         HttpWebRequest requestGetAccountData;
         HttpWebResponse responseAccountData;
 
-        public string CloseShort(string url,string openKey,string closeKey)
-        {
-            string result = "";
+        string url;
+        string openKey;
+        string closeKey;
 
-            if (string.IsNullOrEmpty(openKey) || string.IsNullOrEmpty(url)) return "";
+        public void SetParameters(string url, string openKey, string closeKey)
+        {
             this.url = url;
+            this.openKey = openKey;
+            this.closeKey = closeKey;
+        }
+        public string CloseShort()
+        {
 
             type = "BUY";
 
@@ -49,14 +55,11 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             }
             */
 
-            return result;
+            
         }
-        public string CloseLong(string url, string openKey, string closeKey)
+        public string CloseLong()
         {
-            string result = "";
 
-            if (string.IsNullOrEmpty(openKey) || string.IsNullOrEmpty(url)) return "";
-            this.url = url;
             type = "SELL";
             path = $"symbol=BTCUSDT&side={type}&type=MARKET&quantity=1&reduceOnly=true&newOrderRespType=FULL&timestamp=";
 
@@ -81,16 +84,12 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             }
             */
 
-            return result;
+            
         }
 
-        public string CloseOpenPositions(string url, string openKey, string closeKey)
+        public string CloseOpenPositions()
         {
-            string result = "";
-
-            if (string.IsNullOrEmpty(openKey) || string.IsNullOrEmpty(url)) return "";
-            this.url = url;
-            
+              
             path = $"/fapi/v1/allOpenOrders?symbol=BTCUSDT&timestamp=";
 
             parTimeStampNow = TimeManager.GetTimeStamp();
@@ -111,7 +110,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
                 File.AppendAllText("_LOG_LogClosingPositions.txt", $"\n{DateTime.Now} Произошла ошибка при попытке закрыть открытые позиции, но скорее всего все окей! " + ex);
             }
             */
-            return result;
+            
         }
 
 

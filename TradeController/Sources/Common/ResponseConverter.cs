@@ -35,8 +35,7 @@ namespace TradeController.Sources.Common
 
         private static string ReadResponse(WebResponse response)
         {
-            HttpWebResponse httpResponse = (HttpWebResponse)response;
-            Console.WriteLine("Error code: {0}", httpResponse.StatusCode);
+            HttpWebResponse httpResponse = (HttpWebResponse)response;            
             using (Stream data = response.GetResponseStream())
             using (var reader = new StreamReader(data))
             {

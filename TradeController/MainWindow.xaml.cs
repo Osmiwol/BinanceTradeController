@@ -62,8 +62,7 @@ namespace TradeController
                 tbBorder.IsEnabled = false;
 
                 controller.StartMonitoring(cts, _lowBorder);
-                
-                cts.Cancel();
+
             }
             else
             {
@@ -133,7 +132,9 @@ namespace TradeController
                 
                 btnSaveParameters.IsEnabled = true;
                 btnCloseAllDeals.IsEnabled = true;
-            }            
+            
+            }
+            OPF = null;
         }
 
         private void btnCloseAllDeals_Click(object sender, RoutedEventArgs e)

@@ -19,5 +19,7 @@ namespace TradeController.Sources
         public void CleanAllEvents();
 
         public void CancelAllOpenOrders();
+
+        public int GetIterations();
     }
 }
