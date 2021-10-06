@@ -34,6 +34,7 @@ namespace TradeController
         {
             InitializeComponent();
             cts = new CancellationTokenSource();
+            
         }
 
         private void btnAction_Click(object sender, RoutedEventArgs e)
@@ -43,6 +44,8 @@ namespace TradeController
             if (!_actionMode)
             {
                 cts = new CancellationTokenSource();
+                
+
                 controller.AddDataShower(HandlerDataToInfo);
                 controller.AddDataCleaner(HandlerClearInfo);
 
@@ -59,6 +62,8 @@ namespace TradeController
                 tbBorder.IsEnabled = false;
 
                 controller.StartMonitoring(cts, _lowBorder);
+                
+                cts.Cancel();
             }
             else
             {
@@ -77,7 +82,7 @@ namespace TradeController
                 
                 lblAvailableBalance.Content = "?";
                 lblCommonBalance.Content = "?";
-                
+
             }
 
             _actionMode = !_actionMode;
@@ -112,23 +117,23 @@ namespace TradeController
 
             
         }
-
+        string oldNameKeysFile = "";
         private void btnChooseKeys_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog OPF = new OpenFileDialog();
             OPF.Filter = "Файлы txt|*.txt";
             if (OPF.ShowDialog() == true)
             {
+                if (oldNameKeysFile == OPF.FileName) return;
                 _pathToKeys = OPF.FileName;
-                lblPathToKeys.Content = "Путь к ключам: " + _pathToKeys;                
+                oldNameKeysFile = _pathToKeys;
+                lblPathToKeys.Content = "Путь к ключам: " + _pathToKeys;
 
                 controller = new Controller(cts, _pathToKeys);
                 
                 btnSaveParameters.IsEnabled = true;
                 btnCloseAllDeals.IsEnabled = true;
-            }
-
-            
+            }            
         }
 
         private void btnCloseAllDeals_Click(object sender, RoutedEventArgs e)
@@ -147,10 +152,10 @@ namespace TradeController
 
         private MessageBoxResult ShowYNWind(string text , string header= "Вы уверены?") => MessageBox.Show(text, header, MessageBoxButton.YesNo);
 
-
         private void HandlerDataToInfo(string data) {
-            try { 
-            Dispatcher.Invoke(() => tbInfo.Text += data);
+            try 
+            { 
+                Dispatcher.Invoke(() => tbInfo.Text += data);
             }
             catch(Exception ex)
             {
@@ -158,9 +163,10 @@ namespace TradeController
             }
 }
         private void HandlerClearInfo() {
-            try{ 
-            Dispatcher.Invoke(() => tbInfo.Text = "");
-        }
+            try
+            { 
+                Dispatcher.Invoke(() => tbInfo.Text = "");
+            }
             catch(Exception ex)
             {
                 File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке очистки поля с информацией !" + ex);
@@ -169,8 +175,9 @@ namespace TradeController
 
         public void HandlerCommonBalance(float balance)
         {
-            try{ 
-            Dispatcher.Invoke(() => lblCommonBalance.Content = balance);
+            try
+            { 
+                Dispatcher.Invoke(() => lblCommonBalance.Content = balance);
             }
             catch(Exception ex)
             {
@@ -183,6 +190,7 @@ namespace TradeController
         {
             try { 
             Dispatcher.Invoke(() => lblIter.Content = iter);
+                
             }
             catch(Exception ex)
             {
@@ -204,42 +212,10 @@ namespace TradeController
 
 
 
-        #region TestMethods
-        private void TestMethod()
-        {
-            string json = Controller.TestGetServerTime();
-            tbInfo.Text = json;
-        }
-
-        private void TestDataShow()
-        {
-            //Controller controller = new Controller();
-            /*
-            controller.AddDataShower(AddDataToInfo);
-            controller.AddDataCleaner(ClearInfo);
-            */
-            //controller.StartCheckBalance(null, "asdfjaskdflj", 9000);            
-        }
-
-
-
-        #endregion
-
-
-
         private void tbBorder_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             
-            if (!int.TryParse(e.Text, out int i))
-            {
-                e.Handled = true;
-            }
-            /*
-            if (e.Text == e.Text.ToLower())
-            {
-                e.Handled = true;
-            }
-            */
+            if (!int.TryParse(e.Text, out int i))e.Handled = true;
         }
     }
 }

@@ -30,13 +30,11 @@ namespace TradeController.Sources
         //костыльно, но работает
         CloseAllPositions closer;
         AccountFutureBalance balanceFutures;
-        //string url = "https://testnet.binancefuture.com"; //тестовый url
-        string url = "https://fapi.binance.com";
+        string url = "https://testnet.binancefuture.com"; //тестовый url
+        //string url = "https://fapi.binance.com";
         //
         public Controller(CancellationTokenSource cts, string pathToKeys)
         {
-
-
             if (cts == null)
             {
                 _dataFieldShow?.Invoke("Ошибка! Токен не был передан!" + _restartAndMessage);
@@ -49,6 +47,7 @@ namespace TradeController.Sources
                 _dataFieldShow?.Invoke("Ошибка! Путь к файлу с ключами не был указан!" + _restartAndMessage);
                 return;
             }
+            
             if (!File.Exists(pathToKeys))
             {
                 _dataFieldShow?.Invoke("Ошибка! Файл не существует, по указанному пути!" + _restartAndMessage);
@@ -111,24 +110,45 @@ namespace TradeController.Sources
             int iteration = 1;
             string result;
             
-            List<FutureBalance> futureBalances;
-
+            List<FutureBalance> futureBalances = new List<FutureBalance>();            
             while (!_ct.IsCancellationRequested)
             {
-                Thread.Sleep(80);
+                Console.WriteLine(iteration);
+                //Thread.Sleep(80);
                                 
                 result = balanceFutures.GetAccountBalances(url, keys[0], keys[1]);
-                futureBalances = JsonConvert.DeserializeObject<List<FutureBalance>>(result);
 
-                if (!IsBalanceOK(futureBalances)) CancelAllOpenOrders();
-
-                _availableBalanceShow?.Invoke(futureBalances[1].availableBalance);
-                _balanceShow?.Invoke(futureBalances[1].balance);
+                if(ResponseConverter.IsResponseBalance(result))
+                {
+                    futureBalances = JsonConvert.DeserializeObject<List<FutureBalance>>(result);
+                    _availableBalanceShow?.Invoke(futureBalances[1].availableBalance);
+                    _balanceShow?.Invoke(futureBalances[1].balance);
+                    if (IsBalanceLower(futureBalances))
+                    {
+                        CancelAllOpenOrders();
+                        break;
+                    }
+                    
+                }
+                else                     
+                {
+                    if ((ResponseConverter.IsResponseError(result)))
+                    {
+                        ErrorLogic(result);
+                        break;
+                    }
+                    else
+                    {
+                        _dataFieldClean?.Invoke();
+                        _dataFieldShow?.Invoke("\nНЕИЗВЕСТНАЯ ОШИБКА! Сообщите разработчику:\n" + result );
+                        log += "\nНЕИЗВЕСТНАЯ ОШИБКА!Сообщите разработчику:\n" + result;
+                    }
+                }
 
                 //log += $"\n\t\t\tIteration:{iteration} " + DateTime.Now.ToString() + "\n" + $"Общий баланс:{futureBalances[1].balance} Доступный баланс:{futureBalances[1].availableBalance}\n";
-
                 iteration++;
                 _iterMonitoring?.Invoke(iteration);
+
             }
             log += ("Мониторинг остановлен, итераций: " + iteration);
             log += "\t\t\tEND Monitoring at time: " + DateTime.Now.ToString() + "\n";
@@ -136,42 +156,70 @@ namespace TradeController.Sources
             File.AppendAllText(@"_LOG_Monitoring.txt", log);
         }
 
-        private bool IsBalanceOK(List<FutureBalance> balanses)
-        {
-            
-            if (balanses[1].balance < _lowBorder) return false;
-            else return true;
-
-        }
+        private bool IsBalanceLower(List<FutureBalance> balanses) => (balanses[1].balance < _lowBorder);
 
         public void CancelAllOpenOrders()
         {
             CloseAllPositions cl = new CloseAllPositions();
-            string result = $"\nВнимание, было вызвано закрытие всех позиций! {DateTime.Now}\n";
-            
-            try
+
+            string result = "";
+
+            string log = $"\nВнимание, было вызвано закрытие всех позиций! {DateTime.Now}\n Мониторинг остановлен!";
+            _dataFieldShow?.Invoke(log);
+
+            result = cl.CloseOpenPositions(url, keys[0], keys[1]); ;
+            log += $"{DateTime.Now} open: " +result;
+            if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
+            else _dataFieldShow?.Invoke("Закрытие Open позиций успешно!\n");
+
+            result = cl.CloseShort(url, keys[0], keys[1]);
+            log += $"{DateTime.Now} short: " +result;
+            if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
+            else _dataFieldShow?.Invoke("Закрытие Short позиций успешно!\n");
+
+            result = cl.CloseLong(url, keys[0], keys[1]); ;
+            log += $"{DateTime.Now} long: " +result;
+            if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
+            else _dataFieldShow?.Invoke("Закрытие Long позиций успешно!\n");
+
+            File.AppendAllText("_LOG_CloseAllPositions.txt", log);
+        }
+
+        private void ErrorLogic(string result)
+        {
+            ErrorData error = JsonConvert.DeserializeObject<ErrorData>(result);
+            //_dataFieldClean?.Invoke();
+            _dataFieldShow?.Invoke($"\nВНИМАНИЕ, ОШИБКА!:\n");
+            _dataFieldShow?.Invoke($"Код ошибки: { error.code}\n Текст ошибки: { error.asset}\n");
+            switch (error.code)
             {
-                result += "\nCloseOpenPositions: " + cl.CloseOpenPositions(url, keys[0], keys[1]);
-                result += "\n--------------\n";
-                result += "\nCloseShort: " + cl.CloseShort(url, keys[0], keys[1]);
-                result += "\n--------------\n";
-                result += "\nCloseLong: " + cl.CloseLong(url, keys[0], keys[1]);
-
-                _dataFieldClean();
-                _dataFieldShow?.Invoke($"\nВНИМАНИЕ, было вызвано закрытие всех позиций! {DateTime.Now}\n");
-
+                case (-1021):
+                    _dataFieldShow?.Invoke($"Рекомендация: попробуйте синхронизировать время системы и перезапустить ПО.\n");
+                    break;
+                case (-2014):
+                    _dataFieldShow?.Invoke($"Рекомендация: попробуйте изменить ключи подключения.\nКлучи должны быть сохранены в формате: \nopenKey\ncloseKey(без переноса строки)\n");
+                    break;
+                case (-2015):
+                    _dataFieldShow?.Invoke($"Рекомендация: попробуйте изменить ключи подключения.\nКлучи должны быть сохранены в формате: \nopenKey\ncloseKey(без переноса строки)\n");
+                    break;
+                case (-2022):
+                    _dataFieldShow?.Invoke($"Вероятно, все в порядке. Если был открыт только Long/Short это сообщение,увы, будет появляться.\n");
+                    break;
+                case (-429):
+                    _dataFieldShow?.Invoke($"Время появляения {DateTime.Now}\nРекомендация: подождать пару минут и перезапустить ПО, иначе бан.\n");
+                    break;
+                case (429):
+                    _dataFieldShow?.Invoke($"Время появляения {DateTime.Now}\nРекомендация: подождать пару минут и перезапустить ПО, иначе бан.\n");
+                    break;
+                default:
+                    _dataFieldShow?.Invoke($"Рекомендация: сообщите код ошибки разработчику и попробуйте перезапустить ПО.\n");
+                    break;
             }
-            catch (Exception ex)
-            {
-                _dataFieldClean();
-                _dataFieldShow?.Invoke("ВНИМАНИЕ!! ПРОИЗОШЛА ПРОИЗОШЛА ОШИБКА ПРИ ПОПЫТКЕ ЗАКРЫТЬ ПОЗИЦИИ!\nЗАКРОЙТЕ ПОЗИЦИИ ВРУЧНУЮ!!");
-                result += "\n\n!ОШИБКА! ПРИ ЗАКРЫТИИ!" + ex;
-                result += DateTime.Now;
-            }
+        }
 
-            
-
-            File.AppendAllText("_LOG_CloseAllPositions.txt", result);
+        private void StrangeLogic(string error)
+        {
+            _dataFieldShow?.Invoke($"ВНИМАНИЕ, ПРОИЗОШЛА НЕИЗВЕСТНАЯ ОШИБКА!\nСообщите о ней разработчику и перезапустите программу!\n" + error );
         }
 
         #region TestMethods

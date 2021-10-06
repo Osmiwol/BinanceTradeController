@@ -14,13 +14,10 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
         string parSignature = "signature=";
 
         int parTimeStampNow;
-        HttpWebRequest requestGetAccountData;
-        HttpWebResponse responseAccountData;
+        HttpWebRequest requestGetAccountData;        
         public  string GetAccountBalances(string url,string openKey, string closeKey)
-        {
-            string result = "";
+        {            
             if (string.IsNullOrEmpty(openKey) || string.IsNullOrEmpty(url)) return "";
-
             this.url = url;
 
             parTimeStampNow = TimeManager.GetTimeStamp();
@@ -33,19 +30,8 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
             requestGetAccountData.Headers.Add(HttpRequestHeader.Accept, "*/*");
             requestGetAccountData.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
             requestGetAccountData.Date = DateTime.Now;
-
-            try
-            {
-                responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
-                Stream stream = responseAccountData.GetResponseStream();
-                result = new StreamReader(stream).ReadToEnd();
-            }
-            catch(Exception ex)
-            {
-                File.AppendAllText("BalanceLog.txt", $"\n{DateTime.Now} Произошла ошибка при попытке считывания баланса: {ex}\n");
-            }
-
-            return result;
+            
+            return ResponseConverter.GetResponse(requestGetAccountData);
         }
     }
 }

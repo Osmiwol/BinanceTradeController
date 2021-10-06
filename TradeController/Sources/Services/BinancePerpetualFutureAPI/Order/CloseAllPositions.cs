@@ -35,7 +35,8 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             string signature = HmacSHA256.SighText(path + parTimeStampNow + "123", closeKey);                        
             string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
             requestGetAccountData = CreateRequest("POST", url, parGetAccountPath, openKey);
-
+            return ResponseConverter.GetResponse(requestGetAccountData);
+            /*
             try
             {
                 responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
@@ -46,7 +47,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             {
                 File.AppendAllText("_LOG_LogClosingPositions.txt", $"\n{DateTime.Now} Произошла ошибка при попытке закрыть Short, но скорее всего все окей! " + ex);
             }
-
+            */
 
             return result;
         }
@@ -65,6 +66,9 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
             requestGetAccountData = CreateRequest("POST",url, parGetAccountPath, openKey);
 
+            return ResponseConverter.GetResponse(requestGetAccountData);
+
+            /*
             try
             { 
                 responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
@@ -75,7 +79,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             {                
                 File.AppendAllText("_LOG_LogClosingPositions.txt", $"\n{DateTime.Now} Произошла ошибка при попытке закрыть Long, но скорее всего все окей! " + ex);
             }
-
+            */
 
             return result;
         }
@@ -94,7 +98,8 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             string signature = HmacSHA256.SighText("symbol=BTCUSDT&timestamp=" + parTimeStampNow + "123", closeKey);
             string parGetAccountPath = $"{path}{parTimeStampNow}123&{parSignature}{signature}";
             requestGetAccountData = CreateRequest("DELETE", url, parGetAccountPath, openKey);
-
+            return ResponseConverter.GetResponse(requestGetAccountData);
+            /*
             try
             {
                 responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
@@ -105,7 +110,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             {
                 File.AppendAllText("_LOG_LogClosingPositions.txt", $"\n{DateTime.Now} Произошла ошибка при попытке закрыть открытые позиции, но скорее всего все окей! " + ex);
             }
-
+            */
             return result;
         }
 
