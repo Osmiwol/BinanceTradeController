@@ -51,6 +51,7 @@ namespace TradeController
 
                 controller.AddAvailableShow(HandlerAvailableBalance);
                 controller.AddBalanceShow(HandlerCommonBalance);
+                controller.AddBalancePNL(HandlerPNL);
                 controller.AddIterMonitoring(HandlerIter);
 
                 btnAction.Content = "Остановка мониторинга";
@@ -60,7 +61,7 @@ namespace TradeController
                 btnChooseKeys.IsEnabled = false;
                 btnSaveParameters.IsEnabled = false;
                 tbBorder.IsEnabled = false;
-
+                _lowBorder = int.Parse( tbBorder.Text);
                 controller.StartMonitoring(cts, _lowBorder);
 
             }
@@ -211,6 +212,17 @@ namespace TradeController
             }
         }
 
+        public void HandlerPNL(float pnl)
+        {
+            try
+            {
+                Dispatcher.Invoke(() => lblPNL.Content = pnl);
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("_LOG_MAINF.txt", $"\n{DateTime.Now} Произошла ошибка при попытке вывода доступного баланса!" + ex);
+            }
+        }
 
 
         private void tbBorder_PreviewTextInput(object sender, TextCompositionEventArgs e)

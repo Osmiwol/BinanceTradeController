@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using TradeController.Sources.Common;
+using TradeController.Sources.Model;
 
 namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 {
@@ -57,6 +58,52 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 
             
         }
+
+        public string CloseShort(Position position)
+        {
+            type = "BUY";
+            
+            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={Math.Abs( position.notional + 1)}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+
+            parTimeStampNow = TimeManager.GetTimeStamp();
+
+            string signature = HmacSHA256.SighText(path + parTimeStampNow + "123", closeKey);
+            string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
+            requestGetAccountData = CreateRequest("POST", url, parGetAccountPath, openKey);
+            return ResponseConverter.GetResponse(requestGetAccountData);
+
+
+        }
+
+        public string CloseLong(Position position)
+        {
+
+            type = "SELL";
+            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={Math.Abs( position.notional + 1)}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+
+            parTimeStampNow = TimeManager.GetTimeStamp();
+
+            string signature = HmacSHA256.SighText(path + parTimeStampNow + "123", closeKey);
+            string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
+            requestGetAccountData = CreateRequest("POST", url, parGetAccountPath, openKey);
+
+            return ResponseConverter.GetResponse(requestGetAccountData);
+
+        }
+
+        public string CloseOpenPositions(OpenOrder order)
+        {
+
+            path = $"/fapi/v1/allOpenOrders?symbol={order.symbol}&timestamp=";
+
+            parTimeStampNow = TimeManager.GetTimeStamp();
+
+            string signature = HmacSHA256.SighText("symbol=BTCUSDT&timestamp=" + parTimeStampNow + "123", closeKey);
+            string parGetAccountPath = $"{path}{parTimeStampNow}123&{parSignature}{signature}";
+            requestGetAccountData = CreateRequest("DELETE", url, parGetAccountPath, openKey);
+            return ResponseConverter.GetResponse(requestGetAccountData);
+        }
+
         public string CloseLong()
         {
 

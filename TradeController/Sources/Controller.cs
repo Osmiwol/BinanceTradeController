@@ -20,6 +20,7 @@ namespace TradeController.Sources
         Action<float> _balanceShow;
         Action<float> _availableBalanceShow;
         Action<int> _iterMonitoring;
+        Action<float> _pnl;
         CancellationToken _ct;
         IAccountService accountService;
         int _lowBorder = 0;
@@ -30,11 +31,17 @@ namespace TradeController.Sources
         //костыльно, но работает
         CloseAllPositions closer;
         AccountFutureBalance balanceFutures;
+        ServicePositionInformation servicePositionInfo;
         string url = "https://testnet.binancefuture.com"; //тестовый url
         //string url = "https://fapi.binance.com";
         //
         CloseAllPositions cl;
-        AccountInformation accountInfo;
+        AccountInformationService accountInfo;
+        PositionInformation positionInformation;
+        CurrentAllOpenOrders currentAllOpenOrders;
+
+        bool isCloseOrdersWasCalled = false;
+
         public Controller(CancellationTokenSource cts, string pathToKeys)
         {
             if (cts == null)
@@ -66,6 +73,8 @@ namespace TradeController.Sources
             order = new Order();
             cl = new CloseAllPositions();
             cl.SetParameters(url, keys[0], keys[1]);
+            currentAllOpenOrders = new CurrentAllOpenOrders();
+            currentAllOpenOrders.SetParameters(url, keys[0], keys[1]);
         }
 
         public void AddDataShower(Action<string> action) => _dataFieldShow += action;
@@ -73,6 +82,8 @@ namespace TradeController.Sources
         public void AddBalanceShow(Action<float> action) => _balanceShow += action;
         public void AddAvailableShow(Action<float> action) => _availableBalanceShow += action;
         public void AddIterMonitoring(Action<int> iter) => _iterMonitoring += iter;
+
+        public void AddBalancePNL(Action<float> action) => _pnl += action;
 
         public void CleanAllEvents()
         {
@@ -96,60 +107,80 @@ namespace TradeController.Sources
             _lowBorder = lowBorder;
             
             closer = new CloseAllPositions();
-
+            positionInformation = new PositionInformation();
             Thread monitoringProcess = new Thread(new ParameterizedThreadStart(Monitoring));
             _dataFieldShow?.Invoke("\nИспользуемый url: " + url);
             _dataFieldShow?.Invoke("\nЗапущен поток получения данных!");
             monitoringProcess.Start(keys);
-            
+            currentAllOpenOrders = new CurrentAllOpenOrders();
+            currentAllOpenOrders.SetParameters(url, keys[0], keys[1]);
         }
         int iteration = 1;
         public int GetIterations() => iteration;
-        
 
+        
         private void Monitoring(object o)
         {            
             string[] keys = (string[])o;
 
             
             balanceFutures = new AccountFutureBalance();
-            accountInfo = new AccountInformation();
-
+            accountInfo = new AccountInformationService();
+            servicePositionInfo = new ServicePositionInformation();
+            
             string log = "\t\t\tSTART Monitoring at time: "+DateTime.Now.ToString()+"\n";
             iteration = 1;
             string result;
             
             balanceFutures.SetParameters(url, keys[0], keys[1]);
             accountInfo.SetParameters(url, keys[0], keys[1]);
-            //List<FutureBalance> futureBalances = new List<FutureBalance>();            
+            servicePositionInfo.SetParameters(url, keys[0], keys[1]);
+            positionInformation.SetParameters(url, keys[0], keys[1]);
+            currentAllOpenOrders.SetParameters(url, keys[0], keys[1]);
+            currentAllOpenOrders = new CurrentAllOpenOrders();
             float futureBalance = -1;
+            float pnl = 0;
+            float balance = 0 ;
+            AccountInformation accInfo;
+
+            
+
             while (!_ct.IsCancellationRequested)
             {
-                //result = balanceFutures.GetAccountBalances();
+                if (isCloseOrdersWasCalled)
+                {                    
+                    CancelAllOpenOrders();
+                    _availableBalanceShow?.Invoke(futureBalance);
+                    _pnl?.Invoke(pnl);
+                    _balanceShow?.Invoke(balance);
+
+                    if (DateTime.Now.Second == 0) iteration = 0;
+                    iteration++;
+                    _iterMonitoring?.Invoke(iteration);                    
+                }
+                
                 result = accountInfo.GetAccountBalances();
 
                 if (ResponseConverter.IsResponseBalance(result))
-                {
-                    futureBalance = GetInitialMarginFromResponse(result);
-                    //futureBalances = JsonConvert.DeserializeObject<List<FutureBalance>>(result);
-                    //if (IsBalanceLower(futureBalances))
+                {                    
+                    accInfo = JsonConvert.DeserializeObject<AccountInformation>(result);
+                    pnl = accInfo.totalUnrealizedProfit;
+                    balance = accInfo.totalWalletBalance;
+                    futureBalance = pnl + balance;
+                    
                     if (futureBalance < _lowBorder)
                     {
                         CancelAllOpenOrders();
 
                         _availableBalanceShow?.Invoke(futureBalance);
-                        //_availableBalanceShow?.Invoke(futureBalances[1].availableBalance);
-                        //_balanceShow?.Invoke(futureBalances[1].balance);
+                        _pnl?.Invoke(pnl);
+                        _balanceShow?.Invoke(balance);
 
                         CancelAllOpenOrders();
 
-                        break;
+                        //break;
                     }
-                    _availableBalanceShow?.Invoke(futureBalance);
-                    //_availableBalanceShow?.Invoke(futureBalances[1].availableBalance);
-                    //_balanceShow?.Invoke(futureBalances[1].balance);
-                    
-                    
+
                 }
                 else                     
                 {
@@ -166,7 +197,11 @@ namespace TradeController.Sources
                     }
                 }
 
-                //log += $"\n\t\t\tIteration:{iteration} " + DateTime.Now.ToString() + "\n" + $"Общий баланс:{futureBalances[1].balance} Доступный баланс:{futureBalances[1].availableBalance}\n";
+                _availableBalanceShow?.Invoke(futureBalance);
+                _pnl?.Invoke(pnl);
+                _balanceShow?.Invoke(balance);
+
+                if (DateTime.Now.Second == 0) iteration = 0;
                 iteration++;
                 _iterMonitoring?.Invoke(iteration);
 
@@ -178,74 +213,98 @@ namespace TradeController.Sources
             File.AppendAllText(@"_LOG_Monitoring.txt", log);
         }
 
-        private  float GetInitialMarginFromResponse(string response)
+        List<Position> positions;
+        List<Position> longsForClosing;
+        List<Position> shortsForClosing;
+        List<OpenOrder> openOrders;
+        public void CancelAllOpenOrders()
         {
-            float result = -1.0f;
-            int indBalance = -1;
-            int endBalance = -1;
-
-            if(response.Contains("totalPositionInitialMargin"))
+            string log = $"\nВнимание, было вызвано закрытие всех позиций! {DateTime.Now}\n Мониторинг остановлен!";
+            string allPositionsResult;
+            longsForClosing = new List<Position>();
+            shortsForClosing = new List<Position>();
+            openOrders = new List<OpenOrder>();
+            try
             {
-                indBalance = response.IndexOf("totalPositionInitialMargin") + "totalPositionInitialMargin\":\"".Length;
-                endBalance = response.IndexOf("\",\"totalOpenOrderInitialMargin");
-
-                string subBalance = response.Substring(indBalance,endBalance - indBalance);
-                int indexDot = subBalance.IndexOf(".");
-                subBalance = subBalance.Substring(0, subBalance.Length - (subBalance.Length -indexDot));
-
-
-                try
+                allPositionsResult = positionInformation.GetPostitionInformation();
+                if(ResponseConverter.IsResponseBalance(allPositionsResult))
+                positions = JsonConvert.DeserializeObject<List<Position>>(allPositionsResult);
+                else
                 {
-                    result = float.Parse(subBalance);
+                    _dataFieldClean?.Invoke();
+                    _dataFieldShow?.Invoke("\nВНИМАНИЕ!!НЕ УДАЛОСЬ СЧИТАТЬ ТЕКУЩИЕ  ПОЗИЦИИ ДЛЯ ЗАКРЫТИЯ!\nНЕМЕДЛЕННО ЗАКРОЙТЕ ИХ ВРУЧНУЮ!\n");
+                    log += "\nВНИМАНИЕ!!НЕ УДАЛОСЬ СЧИТАТЬ ТЕКУЩИЕ  ПОЗИЦИИ ДЛЯ ЗАКРЫТИЯ!\nНЕМЕДЛЕННО ЗАКРОЙТЕ ИХ ВРУЧНУЮ!\n";
                 }
-                catch(Exception ex)
-                {
-                    _dataFieldShow("\nОшибка при попытке сконвертировать доступный баланс!");
-                    return 10000000.0f;
-                }
+                    
+            }
+            catch (Exception ex)
+            {
+                _dataFieldClean?.Invoke();
+                _dataFieldShow?.Invoke("\nВНИМАНИЕ!!НЕ УДАЛОСЬ СЧИТАТЬ ТЕКУЩИЕ ПОЗИЦИИ ДЛЯ ЗАКРЫТИЯ!\nНЕМЕДЛЕННО ЗАКРОЙТЕ ИХ ВРУЧНУЮ!\n");
+                log += ex;
+            }
+            
+            string openPositionsResult;
+           
+            openPositionsResult = currentAllOpenOrders.GetCurrentAllOpenOrders();
+            if (openPositionsResult.Contains("symbol"))
+                openOrders = JsonConvert.DeserializeObject<List<OpenOrder>>(openPositionsResult);
+            
+
+            for (int i = 0; i < positions.Count; i++)
+            {
+                if (positions[i].notional < 0)
+                    longsForClosing.Add(positions[i]);
+                else if (positions[i].notional > 0)
+                    shortsForClosing.Add(positions[i]);
             }
 
-            return result;
-        }
-
-        private bool IsBalanceLower(List<FutureBalance> balanses) => (balanses[1].balance < _lowBorder);
-
-        public void CancelAllOpenOrders()
-        {            
             string result = "";
             string resOpen ="";
             string resShort = "";
             string resLong = "";
 
-            resOpen += cl.CloseOpenPositions();
-            resShort += cl.CloseShort();
-            resLong = cl.CloseLong();
 
-            string log = $"\nВнимание, было вызвано закрытие всех позиций! {DateTime.Now}\n Мониторинг остановлен!";
+            foreach (var item in openOrders)
+            {
+                resOpen += cl.CloseOpenPositions(item);
+
+                log += $"{DateTime.Now} open: " + resOpen;
+                if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
+                else _dataFieldShow?.Invoke("Закрытие Open позиций успешно!\n");
+            }
+
+            foreach (Position longPos in longsForClosing)
+            {
+                resLong = cl.CloseLong(longPos);
+
+                log += $"{DateTime.Now} long: " + resLong;
+                if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
+                else _dataFieldShow?.Invoke("Закрытие Long позиции успешно!\n");
+            }
+
+            foreach(Position shortPos in shortsForClosing)
+            {
+                resShort += cl.CloseShort(shortPos);
+                log += $"{DateTime.Now} short: " + resShort;
+                if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
+                else _dataFieldShow?.Invoke("Закрытие Short позиций успешно!\n");
+            }
+        
+
             _dataFieldShow?.Invoke(log);
-
             
-            log += $"{DateTime.Now} open: " + resOpen;
-            if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
-            else _dataFieldShow?.Invoke("Закрытие Open позиций успешно!\n");
-
-            
-            log += $"{DateTime.Now} short: " + resShort;
-            if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
-            else _dataFieldShow?.Invoke("Закрытие Short позиций успешно!\n");
-
-            
-            log += $"{DateTime.Now} long: " + resLong;
-            if (ResponseConverter.IsResponseError(result)) ErrorLogic(result);
-            else _dataFieldShow?.Invoke("Закрытие Long позиций успешно!\n");
-
+        
             File.AppendAllText("_LOG_CloseAllPositions.txt", log);
+            isCloseOrdersWasCalled = true;
         }
+
+        
 
         private void ErrorLogic(string result)
         {
             ErrorData error = JsonConvert.DeserializeObject<ErrorData>(result);
-            //_dataFieldClean?.Invoke();
+            
             _dataFieldShow?.Invoke($"\nВНИМАНИЕ, ОШИБКА!:\n");
             _dataFieldShow?.Invoke($"Код ошибки: { error.code}\n Текст ошибки: { error.asset}\n");
             switch (error.code)
@@ -274,22 +333,6 @@ namespace TradeController.Sources
             }
         }
 
-        private void StrangeLogic(string error)
-        {
-            _dataFieldShow?.Invoke($"ВНИМАНИЕ, ПРОИЗОШЛА НЕИЗВЕСТНАЯ ОШИБКА!\nСообщите о ней разработчику и перезапустите программу!\n" + error );
-        }
 
-        #region TestMethods
-        public static string TestGetServerTime()
-        {
-            string result = "";
-
-            IMarket market = new Market();
-            result = market.CheckServerTime();
-
-            return result;
-        }
-
-        #endregion
     }
 }

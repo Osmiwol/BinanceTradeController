@@ -61,7 +61,8 @@ namespace TradeController.Sources.Common
 
             if (string.IsNullOrEmpty(response)) return result;
 
-            if (response.Contains("USDT") && response.Contains("BNB") && response.Contains("BUSD")) result = true;
+            //if (response.Contains("USDT") && response.Contains("BNB") && response.Contains("BUSD")) result = true;
+            if (response.Contains("BTCUSDT")) result = true;
 
             return result;
         }
