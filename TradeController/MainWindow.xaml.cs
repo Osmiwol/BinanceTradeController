@@ -140,9 +140,13 @@ namespace TradeController
 
         private void btnCloseAllDeals_Click(object sender, RoutedEventArgs e)
         {
-            
+
             if (ShowYNWind("Вы уверены, что хотите закрыть все позиции?", "Закрыть все позиции?") == MessageBoxResult.Yes)
+            {
+                tbInfo.Text += "\nМетод закрытия сделок вызван вручную!";
                 controller.CancelAllOpenOrders();
+            }
+            
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

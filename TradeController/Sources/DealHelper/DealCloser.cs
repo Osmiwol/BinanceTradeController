@@ -35,7 +35,12 @@ namespace TradeController.Sources.DealHelper
             
             List<OpenPosition> openPositions = new List<OpenPosition>();
 
+
+
             string orders = order.CurrentAllOpenOrders();
+            
+            if (string.IsNullOrEmpty(orders) || orders == "[]") return result;
+
             if (orders.Contains("code") && orders.Contains("msg"))
             {
                 Console.WriteLine(orders);
