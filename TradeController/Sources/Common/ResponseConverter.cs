@@ -17,20 +17,12 @@ namespace TradeController.Sources.Common
 
             try
             {
-                using (WebResponse response = request.GetResponse())
-                {
-                    return ReadResponse(response);
-                }
+                return ReadResponse(request.GetResponse());                
             }
             catch (WebException e)
             {
-                using (WebResponse response = e.Response)
-                {
-                    return ReadResponse(response);
-                }
+                return ReadResponse(e.Response);                
             }
-
-            return result;
         }
 
         private static string ReadResponse(WebResponse response)

@@ -4,18 +4,20 @@ using System.Net;
 using System.Text;
 using TradeController.Sources.Common;
 
-namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
+namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 {
-    class AccountInformationService
+    class CancelAllOpenOrders
     {
-
         string url = "";
+        string local = "/fapi/v1/openOrders?";
+        
         string parTimeStamp = "timestamp=";
         string parSignature = "signature=";
+        string parSymbol = "symbol=";
+
 
         int parTimeStampNow;
         HttpWebRequest requestGetAccountData;
-        WebResponse response;
 
         private string openKey;
         private string closeKey;
@@ -25,25 +27,20 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
             this.openKey = openKey;
             this.closeKey = closeKey;
         }
-        public string GetAccountBalances()
+        public string Cancel()
         {
             parTimeStampNow = TimeManager.GetTimeStamp();
             string signature = HmacSHA256.SighText(parTimeStamp + parTimeStampNow + "123", closeKey);
-            string parGetAccountPath = @$"/fapi/v2/account?{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
+            string parGetAccountPath = @$"{local}{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
 
             requestGetAccountData = (HttpWebRequest)WebRequest.Create(url + parGetAccountPath);
 
             requestGetAccountData.Headers.Add(HttpRequestHeader.ContentType, "application/json");
             requestGetAccountData.Headers.Add("X-MBX-APIKEY", openKey);
 
-            /*
-            response = request.GetResponse();
-            var reader =  new StreamReader(response.GetResponseStream());
-            return reader.ReadToEnd();            
-            */
+
 
             return ResponseConverter.GetResponse(requestGetAccountData);
         }
-
     }
 }

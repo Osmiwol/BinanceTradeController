@@ -1,10 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using TradeController.Sources.Common;
 
@@ -12,63 +8,62 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 {
     class Order : IOrder
     {
-        string url = "https://fapi.binance.com";
+        string url;
+        string openKey;
+        string closeKey;
+
+        int timeStamp;
+        HttpWebRequest request;
+        WebResponse response;
+
+
+        string parSymbol = "symbol=";
         string parTimeStamp = "timestamp=";
         string parSignature = "signature=";
-
-        int parTimeStampNow;
-        HttpWebRequest request;
-        HttpWebResponse response;
-
-        HttpClient client;
-        HttpResponseMessage resp;
-        public string CancelAllOpenOrders(string openKey, string secretKey)
+        public Order(string url, string openKey,string closeKey)
         {
-            if (string.IsNullOrEmpty(openKey)) return "";
-
-            client = new HttpClient();
-
-            parTimeStampNow = TimeManager.GetTimeStamp();
-            string signature = HmacSHA256.SighText("symbol=BTCUSDT&" + parTimeStamp + parTimeStampNow + "123", secretKey);
-            string requestPath = @$"/fapi/v1/allOpenOrders?symbol=BTCUSDT&{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
-
-            //Data( openKey,  secretKey);
-            
-            request = (HttpWebRequest)WebRequest.Create(url + requestPath);
-            request.Method = "DELETE";
-            request.Headers.Add(HttpRequestHeader.ContentType, "application/json");
-            request.Headers.Add("X-MBX-APIKEY", openKey);            
-            request.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
-            request.Date = DateTime.Now;                        
-            
-            response = (HttpWebResponse)request.GetResponse();
-            Stream stream = response.GetResponseStream();
-            return new StreamReader(stream).ReadToEnd();
-
+            this.url = url;
+            this.openKey = openKey;
+            this.closeKey = closeKey;
         }
-        //{{url}}/fapi/v1/order?
-        //symbol=BTCUSDT&side=BUY&type=MARKET&quantity=1&reduceOnly=true&newOrderRespType=FULL&timestamp={{timestamp}}&signature={{signature}}
 
-        private async void  Data(string openKey, string secretKey)
+        public string CancelAllOpenOrders(string symbol)
         {
-            parTimeStampNow = TimeManager.GetTimeStamp();
-            string signature = HmacSHA256.SighText("symbol=BTCUSDT&" + parTimeStamp + parTimeStampNow + "123", secretKey);
-            string requestPath = @$"/fapi/v1/allOpenOrders?symbol=BTCUSDT&{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";
+            string local = "/fapi/v1/allOpenOrders?";
 
+            timeStamp = TimeManager.GetTimeStamp();
+            string parametersForSign = $"{parSymbol}{symbol}&{parTimeStamp}{timeStamp}123";
+            string signature = HmacSHA256.SighText(parametersForSign, closeKey);
+            string fullParameters = $"{parametersForSign}&{parSignature}{signature}";
+            string fullPath = local + fullParameters;
+            Console.WriteLine($"\n{local}\n{fullParameters}\n{fullPath}");
 
-            HttpRequestMessage message = new HttpRequestMessage()
-            {
-                RequestUri = new Uri(url + requestPath),
-                Method = HttpMethod.Delete,
-            };
-            
-            message.Headers.Add("ContentType", "application/json");
-            message.Headers.Add("X-MBX-APIKEY", openKey);
+            request = Common.CreateRequest("DELETE", url, fullPath, openKey);
 
-            var task = await client.SendAsync(message);
-            
-            Console.WriteLine(resp);
-
+            return ResponseConverter.GetResponse(request);
         }
+
+        public string CurrentAllOpenOrders(string symbol="")
+        {
+            string local = "/fapi/v1/openOrders?";
+
+            timeStamp = TimeManager.GetTimeStamp();
+            string parametersForSign;
+            
+            if (string.IsNullOrEmpty(symbol))
+                parametersForSign = $"{parTimeStamp}{timeStamp}123";
+            else
+                parametersForSign = $"{parSymbol}{symbol}&{parTimeStamp}{timeStamp}123";
+
+            string signature = HmacSHA256.SighText(parametersForSign, closeKey);
+            string fullParameters = $"{parametersForSign}&{parSignature}{signature}";
+            string fullPath = local + fullParameters;
+
+            request = Common.CreateRequest("GET", url, fullPath, openKey);
+
+            return ResponseConverter.GetResponse(request);
+        }
+        
+
     }
 }

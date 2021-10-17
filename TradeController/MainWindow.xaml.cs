@@ -140,6 +140,7 @@ namespace TradeController
 
         private void btnCloseAllDeals_Click(object sender, RoutedEventArgs e)
         {
+            
             if (ShowYNWind("Вы уверены, что хотите закрыть все позиции?", "Закрыть все позиции?") == MessageBoxResult.Yes)
                 controller.CancelAllOpenOrders();
         }

@@ -46,7 +46,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             /*
             try
             {
-                responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
+                responseAccountData = (HttpWebResponse)request.GetResponse();
                 Stream stream = responseAccountData.GetResponseStream();
                 result = new StreamReader(stream).ReadToEnd(); 
             }
@@ -62,15 +62,29 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
         public string CloseShort(Position position)
         {
             type = "BUY";
+
+            Console.WriteLine("AMT: " + position.positionAmt);
+            Console.WriteLine("Notional: " + position.notional);
+
+            double valueToClose = Math.Abs(position.notional);
+            valueToClose = Math.Abs(position.positionAmt) + Math.Abs(position.notional);
+            valueToClose = Math.Round(valueToClose, 0);
             
-            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={Math.Abs( position.notional + 1)}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+            Console.WriteLine("Closing: " + valueToClose);
+            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={valueToClose.ToString().Replace(',','.')}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+            //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={(Math.Abs(position.positionAmt) + Math.Abs(position.notional)).ToString().Replace(',', '.')}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+
+            //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={(int)valueToClose + 1}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+            //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity=1&reduceOnly=true&newOrderRespType=FULL&timestamp=";
 
             parTimeStampNow = TimeManager.GetTimeStamp();
 
             string signature = HmacSHA256.SighText(path + parTimeStampNow + "123", closeKey);
             string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
             requestGetAccountData = CreateRequest("POST", url, parGetAccountPath, openKey);
-            return ResponseConverter.GetResponse(requestGetAccountData);
+            string res = ResponseConverter.GetResponse(requestGetAccountData);
+            Console.WriteLine(res);
+            return res;
 
 
         }
@@ -79,19 +93,38 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
         {
 
             type = "SELL";
-            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={Math.Abs( position.notional + 1)}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+
+            Console.WriteLine("AMT: " + position.positionAmt);
+            Console.WriteLine("Notional: " + position.notional);
+
+            double valueToClose = Math.Abs(position.notional);
+            valueToClose = Math.Abs(position.positionAmt) + Math.Abs(position.notional);
+            valueToClose = Math.Round(valueToClose, 0);
+
+            Console.WriteLine("Closing: " + valueToClose);
+            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={valueToClose.ToString().Replace(',', '.')}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+            /*
+            double valueToClose = Math.Abs(position.notional);
+            valueToClose = Math.Round(valueToClose, 0);
+            Console.WriteLine("Closing: " + valueToClose);
+            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={valueToClose.ToString().Replace(',', '.')}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+            */
+            //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={(int)valueToClose+1}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+
+            //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity=1&reduceOnly=true&newOrderRespType=FULL&timestamp=";
 
             parTimeStampNow = TimeManager.GetTimeStamp();
 
             string signature = HmacSHA256.SighText(path + parTimeStampNow + "123", closeKey);
             string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
             requestGetAccountData = CreateRequest("POST", url, parGetAccountPath, openKey);
-
-            return ResponseConverter.GetResponse(requestGetAccountData);
+            string res = ResponseConverter.GetResponse(requestGetAccountData);
+            Console.WriteLine(res);
+            return res;
 
         }
 
-        public string CloseOpenPositions(OpenOrder order)
+        public string CloseOpenPositions(OpenPosition order)
         {
 
             path = $"/fapi/v1/allOpenOrders?symbol={order.symbol}&timestamp=";
@@ -121,7 +154,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             /*
             try
             { 
-                responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
+                responseAccountData = (HttpWebResponse)request.GetResponse();
                 Stream stream = responseAccountData.GetResponseStream();
                 result = new StreamReader(stream).ReadToEnd();
             }
@@ -148,7 +181,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             /*
             try
             {
-                responseAccountData = (HttpWebResponse)requestGetAccountData.GetResponse();
+                responseAccountData = (HttpWebResponse)request.GetResponse();
                 Stream stream = responseAccountData.GetResponseStream();
                 result = new StreamReader(stream).ReadToEnd();
             }

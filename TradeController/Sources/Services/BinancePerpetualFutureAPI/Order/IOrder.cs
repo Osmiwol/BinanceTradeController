@@ -6,6 +6,10 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 {
     interface IOrder
     {
-        public string CancelAllOpenOrders(string openKey, string secretKey);
+        
+        public string CancelAllOpenOrders(string symbol);
+
+        public string CurrentAllOpenOrders(string symbol="");
+
     }
 }

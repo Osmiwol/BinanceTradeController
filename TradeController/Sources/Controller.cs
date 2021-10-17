@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using TradeController.Sources.Common;
+using TradeController.Sources.DealHelper;
 using TradeController.Sources.Model;
 using TradeController.Sources.Services.BinancePerpetualFutureAPI;
 using TradeController.Sources.Services.BinancePerpetualFutureAPI.Account;
@@ -28,12 +29,14 @@ namespace TradeController.Sources
 
         IOrder order;
 
+        DealCloser dealCloser;
+
         //костыльно, но работает
         CloseAllPositions closer;
         AccountFutureBalance balanceFutures;
         ServicePositionInformation servicePositionInfo;
-        string url = "https://testnet.binancefuture.com"; //тестовый url
-        //string url = "https://fapi.binance.com";
+        //string url = "https://testnet.binancefuture.com"; //тестовый url
+        string url = "https://fapi.binance.com";
         //
         CloseAllPositions cl;
         AccountInformationService accountInfo;
@@ -70,11 +73,13 @@ namespace TradeController.Sources
                 return;
             }
 
-            order = new Order();
+            
             cl = new CloseAllPositions();
             cl.SetParameters(url, keys[0], keys[1]);
             currentAllOpenOrders = new CurrentAllOpenOrders();
             currentAllOpenOrders.SetParameters(url, keys[0], keys[1]);
+            dealCloser = new DealCloser(url, keys);
+            positionInformation = new PositionInformation();
         }
 
         public void AddDataShower(Action<string> action) => _dataFieldShow += action;
@@ -216,14 +221,31 @@ namespace TradeController.Sources
         List<Position> positions;
         List<Position> longsForClosing;
         List<Position> shortsForClosing;
-        List<OpenOrder> openOrders;
+        List<OpenPosition> openOrders;
+        
         public void CancelAllOpenOrders()
         {
+            dealCloser.CloseOpenDeals();
+            
+            List<Position> positions = new List<Position>();
+            positionInformation.SetParameters(url, keys[0], keys[1]);
+            
+            string allPositionsData = positionInformation.GetPostitionInformation();
+            positions = PositionsToClosing(allPositionsData);
+            dealCloser.CloseDeals(positions);
+
+
+
+            //TestMethod();
+            //return;
+
+            /*
+
             string log = $"\nВнимание, было вызвано закрытие всех позиций! {DateTime.Now}\n Мониторинг остановлен!";
             string allPositionsResult;
             longsForClosing = new List<Position>();
             shortsForClosing = new List<Position>();
-            openOrders = new List<OpenOrder>();
+            openOrders = new List<OpenPosition>();
             try
             {
                 allPositionsResult = positionInformation.GetPostitionInformation();
@@ -248,7 +270,7 @@ namespace TradeController.Sources
            
             openPositionsResult = currentAllOpenOrders.GetCurrentAllOpenOrders();
             if (openPositionsResult.Contains("symbol"))
-                openOrders = JsonConvert.DeserializeObject<List<OpenOrder>>(openPositionsResult);
+                openOrders = JsonConvert.DeserializeObject<List<OpenPosition>>(openPositionsResult);
             
 
             for (int i = 0; i < positions.Count; i++)
@@ -297,6 +319,8 @@ namespace TradeController.Sources
         
             File.AppendAllText("_LOG_CloseAllPositions.txt", log);
             isCloseOrdersWasCalled = true;
+
+            */
         }
 
         
@@ -333,6 +357,67 @@ namespace TradeController.Sources
             }
         }
 
+        //MethodForTest
+        private void TestMethod()
+        {
+            DealCloser dealCloser = new DealCloser(url, keys);
+
+            List<Position> positions = new List<Position>();
+            positionInformation = new PositionInformation();
+            positionInformation.SetParameters(url, keys[0], keys[1]);
+
+            string allPositionsData = positionInformation.GetPostitionInformation();
+            positions = PositionsToClosing(allPositionsData);
+
+            Console.WriteLine(  dealCloser.CloseDeals(positions) );
+
+            /*
+            DealCloser dealCloser = new DealCloser(url, keys);
+            Console.WriteLine(dealCloser.CloseOpenDeals());
+            */
+
+            /*
+            _dataFieldShow += ShowMessage;
+            IOrder order = new Order(url, keys[0], keys[1]);
+            List<OpenPosition> openPositions = new List<OpenPosition>();
+
+            string orders = order.CurrentAllOpenOrders();
+            if (orders.Contains("code") && orders.Contains("msg"))
+                ErrorLogic(orders);
+            else
+                openPositions = JsonConvert.DeserializeObject<List<OpenPosition>>(orders);
+
+            for (int i = 0; i < openPositions.Count; i++)
+            {
+                string response = order.CancelAllOpenOrders(openPositions[i].symbol);
+
+                if (response.Contains("code") && response.Contains("msg") && response.Contains("200"))
+                    Console.WriteLine(response);
+                else
+                    ErrorLogic(response);
+            }
+            */
+
+        }
+        private void ShowMessage(string message)
+        {
+            Console.WriteLine(message);
+        }
+
+        private List<Position> PositionsToClosing(string positionsData)
+        {
+            List<Position> result = new List<Position>();
+
+            List<Position> positions = JsonConvert.DeserializeObject<List<Position>>(positionsData);
+
+            for (int i = 0; i < positions.Count; i++)
+            {
+                if (positions[i].notional != 0)
+                    result.Add(positions[i]);
+            }
+
+            return result;
+        }
 
     }
 }

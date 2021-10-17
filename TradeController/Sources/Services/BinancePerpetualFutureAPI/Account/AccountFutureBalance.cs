@@ -37,7 +37,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
             requestGetAccountData.Headers.Add("X-MBX-APIKEY", openKey);
             
             /*
-            response = requestGetAccountData.GetResponse();
+            response = request.GetResponse();
             var reader =  new StreamReader(response.GetResponseStream());
             return reader.ReadToEnd();            
             */

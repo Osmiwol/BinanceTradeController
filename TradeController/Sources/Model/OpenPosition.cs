@@ -5,7 +5,7 @@ using System.Text;
 
 namespace TradeController.Sources.Model
 {
-    class OpenOrder
+    class OpenPosition
     {
         [JsonProperty("orderId")]
         public long orderId { get; set; }
