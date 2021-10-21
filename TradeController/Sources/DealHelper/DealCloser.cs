@@ -35,8 +35,6 @@ namespace TradeController.Sources.DealHelper
             
             List<OpenPosition> openPositions = new List<OpenPosition>();
 
-
-
             string orders = order.CurrentAllOpenOrders();
             
             if (string.IsNullOrEmpty(orders) || orders == "[]") return result;
@@ -77,10 +75,16 @@ namespace TradeController.Sources.DealHelper
             for (int i = 0; i < positions.Count; i++)
             {
                 if (positions[i].notional > 0)
-                    result += closeAllPositions.CloseLong(positions[i]);
-                else 
+                {
+                    result += closeAllPositions.CloseLong(positions[i], true);
+                    result += closeAllPositions.CloseLong(positions[i], false);
+                }
+                else
                     if (positions[i].notional < 0)
-                        result += closeAllPositions.CloseShort(positions[i]);
+                    {
+                        result += closeAllPositions.CloseShort(positions[i],true);
+                        result += closeAllPositions.CloseShort(positions[i],false);
+                    }
             }
 
             return result;

@@ -44,7 +44,7 @@ namespace TradeController.Sources
         
 
         bool isCloseOrdersWasCalled = false;
-
+        bool isTimeError = false;
         public Controller(CancellationTokenSource cts, string pathToKeys)
         {
             if (cts == null)
@@ -142,9 +142,10 @@ namespace TradeController.Sources
             float pnl = 0;
             float balance = 0 ;
             AccountInformation accInfo;
-
+            int counterTimeError = 0;
             while (!_ct.IsCancellationRequested)
             {
+
                 if (isCloseOrdersWasCalled)
                 {                    
                     CancelAllOpenOrders();
@@ -160,25 +161,36 @@ namespace TradeController.Sources
                 result = accountInfo.GetAccountBalances();
 
                 if (ResponseConverter.IsResponseBalance(result))
-                {                    
-                    accInfo = JsonConvert.DeserializeObject<AccountInformation>(result);
-                    pnl = accInfo.totalUnrealizedProfit;
-                    balance = accInfo.totalWalletBalance;
-                    futureBalance = pnl + balance;
-                    
-                    if (futureBalance < _lowBorder)
+                {
+                    isTimeError = false;
+                    counterTimeError = 0;
+                    try
                     {
-                        CancelAllOpenOrders();
-                        _dataFieldShow?.Invoke($"\nВНИМАНИЕ!Трейдер привысил допустимый предел трат!\n {DateTime.Now}\n");
+                        accInfo = JsonConvert.DeserializeObject<AccountInformation>(result);
 
-                        _availableBalanceShow?.Invoke(futureBalance);
-                        _pnl?.Invoke(pnl);
-                        _balanceShow?.Invoke(balance);
+                        pnl = accInfo.totalUnrealizedProfit;
+                        balance = accInfo.totalWalletBalance;
+                        futureBalance = pnl + balance;
 
-                        CancelAllOpenOrders();
+                        if (futureBalance < _lowBorder)
+                        {
+                            CancelAllOpenOrders();
+                            _dataFieldShow?.Invoke($"\nВНИМАНИЕ!Трейдер привысил допустимый предел трат!\n {DateTime.Now}\n");
 
-                        //break;
+                            _availableBalanceShow?.Invoke(futureBalance);
+                            _pnl?.Invoke(pnl);
+                            _balanceShow?.Invoke(balance);
+
+                            CancelAllOpenOrders();
+
+                            //break;
+                        }
                     }
+                    catch(Exception ex)
+                    {
+                        _dataFieldShow("\nВнимание! Произошла непредвиденная ошибка при попытке получить значение баланса!");
+                    }
+                    
 
                 }
                 else                     
@@ -186,7 +198,16 @@ namespace TradeController.Sources
                     if ((ResponseConverter.IsResponseError(result)))
                     {
                         ErrorLogic(result);
-                        break;
+                        if (isTimeError && counterTimeError < 70)
+                        {
+                            counterTimeError++;
+                            continue;
+                        }
+                        else
+                        {
+                            _dataFieldShow("\nПроизошла ошибка, которую не удалось исправить!\n");
+                            break;
+                        }
                     }
                     else
                     {
@@ -227,20 +248,42 @@ namespace TradeController.Sources
             
             string allPositionsData = positionInformation.GetPostitionInformation();
             positions = PositionsToClosing(allPositionsData);
-            if (positions.Count < 1) return;
-            string closePositionsResult = dealCloser.CloseDeals(positions);
-            if (closePositionsResult != "")
-                _dataFieldShow?.Invoke($"\nВНИМАНИЕ! Трейдер привысил допустимый предел трат! \nФьючерсные заявки были закрыты! :{DateTime.Now}\n");
-            else if (closePositionsResult.Contains("code") && closePositionsResult.Contains("msg"))
-                ErrorLogic(closePositionsResult);
+            if (positions.Count < 1)
+            {
+                return;
+            }
+            else
+            {
+                while (positions.Count > 0)
+                {
+
+                    string closePositionsResult = dealCloser.CloseDeals(positions);
+                    if (closePositionsResult != "")
+                        _dataFieldShow?.Invoke($"\nВНИМАНИЕ! Трейдер привысил допустимый предел трат! \nФьючерсные заявки были закрыты! :{DateTime.Now}\n");
+                    else if (closePositionsResult.Contains("code") && closePositionsResult.Contains("msg"))
+                        ErrorLogic(closePositionsResult);
+
+                    allPositionsData = positionInformation.GetPostitionInformation();
+                    positions = PositionsToClosing(allPositionsData);
+                }
+
+            }
+            
         }
 
         private List<Position> PositionsToClosing(string positionsData)
         {
             List<Position> result = new List<Position>();
             if (string.IsNullOrEmpty(positionsData)) return result;
-
-            List<Position> positions = JsonConvert.DeserializeObject<List<Position>>(positionsData);
+            List<Position> positions = new List<Position>();
+            try
+            {
+                positions = JsonConvert.DeserializeObject<List<Position>>(positionsData);
+            }
+            catch(Exception ex)
+            {
+                _dataFieldShow?.Invoke(ex.ToString());
+            }
 
             for (int i = 0; i < positions.Count; i++)
             {
@@ -251,7 +294,7 @@ namespace TradeController.Sources
             return result;
         }
 
-
+        
         private void ErrorLogic(string result)
         {
             if (string.IsNullOrEmpty(result)) return;
@@ -264,24 +307,35 @@ namespace TradeController.Sources
             switch (error.code)
             {
                 case (-1021):
-                    _dataFieldShow?.Invoke($"Рекомендация: попробуйте синхронизировать время системы и перезапустить ПО.\n");
+                    //_dataFieldShow?.Invoke($"Рекомендация: попробуйте синхронизировать время системы и перезапустить ПО.\n");
+
+                    isTimeError = true;
+                    _dataFieldShow?.Invoke($"Рекомендация: попробуем синхронизировать время системы и повторить запрос...\n");
+                    TimeUpdator.SetTimeToCurrent();
                     break;
                 case (-2014):
+                    isTimeError = false;
                     _dataFieldShow?.Invoke($"Рекомендация: попробуйте изменить ключи подключения.\nКлучи должны быть сохранены в формате: \nopenKey\ncloseKey(без переноса строки)\n");
                     break;
                 case (-2015):
+                    isTimeError = false;
                     _dataFieldShow?.Invoke($"Рекомендация: попробуйте изменить ключи подключения.\nКлучи должны быть сохранены в формате: \nopenKey\ncloseKey(без переноса строки)\n");
                     break;
-                case (-2022):
+                case (-2022):                    
                     _dataFieldShow?.Invoke($"Вероятно, все в порядке. Если был открыт только Long/Short это сообщение,увы, будет появляться.\n");
                     break;
                 case (-429):
-                    _dataFieldShow?.Invoke($"Время появляения {DateTime.Now}\nРекомендация: подождать пару минут и перезапустить ПО, иначе бан.\n");
+                    isTimeError = true;
+                    _dataFieldShow?.Invoke($"Время появляения {DateTime.Now}\nРекомендация: подождать пару минут и перезапустить ПО, иначе бан.\nВыполняется ожидание..");
+                    Thread.Sleep(90 * 1000);
                     break;
                 case (429):
-                    _dataFieldShow?.Invoke($"Время появляения {DateTime.Now}\nРекомендация: подождать пару минут и перезапустить ПО, иначе бан.\n");
+                    isTimeError = true;
+                    _dataFieldShow?.Invoke($"Время появляения {DateTime.Now}\nРекомендация: подождать пару минут и перезапустить ПО, иначе бан.\nВыполняется ожидание..");
+                    Thread.Sleep(90 * 1000);
                     break;
                 default:
+                    isTimeError = false;
                     _dataFieldShow?.Invoke($"Рекомендация: сообщите код ошибки разработчику и попробуйте перезапустить ПО.\n");
                     break;
             }

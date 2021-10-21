@@ -23,6 +23,9 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
         string openKey;
         string closeKey;
 
+        bool quantOneShort = true;
+        bool quantOneLong = true;
+
         public void SetParameters(string url, string openKey, string closeKey)
         {
             this.url = url;
@@ -31,16 +34,25 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
         }
 
 
-        public string CloseShort(Position position)
+        public string CloseShort(Position position,bool typeQuantity)
         {
             type = "BUY";
 
             if (position == null) return "{code:-1, msg: short position was empty }";
-
-            double quantity =Math.Abs(position.positionAmt) + Math.Abs(position.notional);
-            quantity = Math.Round(quantity, 0);
-
-            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={quantity}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+            
+            if (typeQuantity)
+            {
+                path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={1}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+                quantOneShort = false;
+                
+            }
+            else
+            {
+                double quantity = Math.Abs(position.positionAmt) + Math.Abs(position.notional);
+                quantity = Math.Round(quantity, 0);
+                path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={quantity}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+                
+            }
             //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={1}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
 
             parTimeStampNow = TimeManager.GetTimeStamp();
@@ -50,20 +62,31 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             requestGetAccountData = Common.CreateRequest("POST", url, parGetAccountPath, openKey);
             string res = ResponseConverter.GetResponse(requestGetAccountData);
             Console.WriteLine(res);
+
             return res;
 
         }
 
-        public string CloseLong(Position position)
+        public string CloseLong(Position position,bool typeQuantity)
         {
             type = "SELL";
 
             if (position == null) return "{code:-1, msg: long position was empty }";
 
-            double quantity = Math.Abs(position.positionAmt) + Math.Abs(position.notional);
-            quantity = Math.Round(quantity, 0);
+            if (typeQuantity)
+            {
+                path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={1}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+                quantOneLong = false;
+                
+                //CloseLong(position);
+            }
+            else
+            {
+                double quantity = Math.Abs(position.positionAmt) + Math.Abs(position.notional);
+                quantity = Math.Round(quantity, 0);
 
-            path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={quantity}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
+                path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={quantity}&reduceOnly=true&newOrderRespType=FULL&timestamp=";                
+            }
             //path = $"symbol={position.symbol}&side={type}&type=MARKET&quantity={1}&reduceOnly=true&newOrderRespType=FULL&timestamp=";
 
             parTimeStampNow = TimeManager.GetTimeStamp();
@@ -72,6 +95,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             string parGetAccountPath = $"{local}{path}{parTimeStampNow}123&{parSignature}{signature}";
             requestGetAccountData = Common.CreateRequest("POST", url, parGetAccountPath, openKey);
             string res = ResponseConverter.GetResponse(requestGetAccountData);
+            
             Console.WriteLine(res);
             return res;
 
