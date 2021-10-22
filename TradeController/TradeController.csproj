@@ -15,4 +15,10 @@
     <PackageReference Include="NLog.Config" Version="4.7.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="C:\Users\ExMachine\.nuget\packages\nlog.config\4.7.11\contentFiles\any\any\NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

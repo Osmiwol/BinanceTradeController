@@ -33,8 +33,8 @@ namespace TradeController.Sources
         CloseAllPositions closer;
         
         
-        string url = "https://testnet.binancefuture.com"; //тестовый url
-        //string url = "https://fapi.binance.com";
+        //string url = "https://testnet.binancefuture.com"; //тестовый url
+        string url = "https://fapi.binance.com";
         //
         CloseAllPositions cl;
         AccountInformationService accountInfo;
