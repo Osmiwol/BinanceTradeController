@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using TradeController.Sources.Common;
 
 namespace TradeController.Sources.Services.BinancePerpetualFutureAPI
 {
@@ -9,6 +10,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI
     {
         public static HttpWebRequest CreateRequest(string typeRequest, string url, string path, string openKey)
         {
+            LoggerWriter.LogAndConsole("Вызван метод CreateRequest");
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url + path);
             request.Method = typeRequest;
             request.Headers.Add(HttpRequestHeader.ContentType, "application/json");
@@ -17,6 +19,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI
             request.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
             request.Date = DateTime.Now;
 
+            LoggerWriter.LogAndConsole("CreateRequest завершен");
             return request;
         }
 

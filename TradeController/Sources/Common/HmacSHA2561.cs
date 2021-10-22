@@ -10,6 +10,7 @@ namespace TradeController.Sources.Common
     {
         public static string SighText(string text, string key)
         {
+            LoggerWriter.LogAndConsole("SighText");
             string result = "";
 
             byte[] byteKey = System.Text.Encoding.UTF8.GetBytes(key);
@@ -24,6 +25,8 @@ namespace TradeController.Sources.Common
                 }
             }
 
+            LoggerWriter.LogAndConsole("SighText завершен");
+
             return result;
         }
 
@@ -31,6 +34,7 @@ namespace TradeController.Sources.Common
 
         public static string Serialize(byte[] data)
         {
+            LoggerWriter.LogAndConsole("Serialize");
             StringBuilder result = new StringBuilder();
 
             foreach (byte b in data)

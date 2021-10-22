@@ -21,12 +21,14 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Account
         private string closeKey;
         public void SetParameters(string url, string openKey, string closeKey)
         {
+            LoggerWriter.LogAndConsole("инициализированы поля AccountInformationService.SetParameters");
             this.url = url;
             this.openKey = openKey;
             this.closeKey = closeKey;
         }
         public string GetAccountBalances()
         {
+            LoggerWriter.LogAndConsole("Вызван метод GetAccountBalances");
             parTimeStampNow = TimeManager.GetTimeStamp();
             string signature = HmacSHA256.SighText(parTimeStamp + parTimeStampNow + "123", closeKey);
             string parGetAccountPath = @$"/fapi/v2/account?{parTimeStamp}{parTimeStampNow}123&{parSignature}{signature}";

@@ -27,6 +27,7 @@
         <TextBox x:Name="tbInfo" Margin="14,95,19,70" Text="Общая информация" TextWrapping="Wrap" HorizontalScrollBarVisibility="Visible" IsReadOnly="True"/>
         <Label x:Name="lblPNL" Content="" Margin="230,0,187,44" Height="26" VerticalAlignment="Bottom"/>
         <Label Content="PNL:" HorizontalAlignment="Left" Margin="184,0,0,44" Height="26" VerticalAlignment="Bottom"/>
+        <CheckBox x:Name="chbLogs" Content="Логи" HorizontalAlignment="Left" Margin="147,72,0,0" VerticalAlignment="Top" Checked="chbLogs_Checked" Width="54" Click="chbLogs_Click"/>
 
     </Grid>
 </Window>

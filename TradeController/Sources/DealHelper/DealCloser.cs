@@ -1,7 +1,9 @@
 ﻿using Newtonsoft.Json;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TradeController.Sources.Common;
 using TradeController.Sources.Model;
 using TradeController.Sources.Services.BinancePerpetualFutureAPI.Account;
 using TradeController.Sources.Services.BinancePerpetualFutureAPI.Order;
@@ -68,6 +70,7 @@ namespace TradeController.Sources.DealHelper
         
         public string CloseDeals(List<Position> positions)
         {
+            LoggerWriter.LogAndConsole($"Вызван метод CloseDeals! Количество позиций: {positions.Count}\n");
             string result = "";
 
             if (positions == null || positions.Count < 1) return result;
@@ -76,17 +79,20 @@ namespace TradeController.Sources.DealHelper
             {
                 if (positions[i].notional > 0)
                 {
+                    LoggerWriter.LogAndConsole($"Закрытие позиции лонг!\n");
                     result += closeAllPositions.CloseLong(positions[i], true);
                     result += closeAllPositions.CloseLong(positions[i], false);
                 }
                 else
                     if (positions[i].notional < 0)
                     {
+                        LoggerWriter.LogAndConsole($"Закрытие позиции шорт!\n");
                         result += closeAllPositions.CloseShort(positions[i],true);
                         result += closeAllPositions.CloseShort(positions[i],false);
                     }
             }
 
+            LoggerWriter.LogAndConsole($"Функция closeDeals завершена!\n");
             return result;
         }
 

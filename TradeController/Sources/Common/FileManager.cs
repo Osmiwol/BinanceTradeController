@@ -9,6 +9,7 @@ namespace TradeController.Sources.Common
     {
         public static string GetTextFromFile(string path)
         {
+            LoggerWriter.LogAndConsole("GetTextFromFile");
             string result = "";
             if (string.IsNullOrEmpty(path)) return result;
             if (!File.Exists(path)) return result;
@@ -21,7 +22,7 @@ namespace TradeController.Sources.Common
             fs.Read(array, 0, array.Length);
             // декодируем байты в строку
             result = System.Text.Encoding.Default.GetString(array);
-
+            LoggerWriter.LogAndConsole("GetTextFromFile Завершен");
             return result;
         }
     }

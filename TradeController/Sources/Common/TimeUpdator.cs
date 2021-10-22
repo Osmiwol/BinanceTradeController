@@ -10,14 +10,23 @@ namespace TradeController.Sources.Common
     {
         public static void SetTimeToCurrent()
         {
-            DateTime gettedDateTime = GetNetworkTime();
-            System.Diagnostics.Process timeChanger = System.Diagnostics.Process.Start("cmd.exe", $@"/c time {gettedDateTime.Hour}:{gettedDateTime.Minute}:{gettedDateTime.Second},{gettedDateTime.Millisecond.ToString().Substring(0, 2)}");
-
+            LoggerWriter.LogAndConsole("Вызван метод обновления времени!\n");
+            try
+            {
+                DateTime gettedDateTime = GetNetworkTime();
+                System.Diagnostics.Process timeChanger = System.Diagnostics.Process.Start("cmd.exe", $@"/c time {gettedDateTime.Hour}:{gettedDateTime.Minute}:{gettedDateTime.Second},{gettedDateTime.Millisecond.ToString().Substring(0, 2)}");
+                LoggerWriter.LogAndConsole("Обновление времени успешно!\n");
+            }
+            catch(Exception ex)
+            {
+                LoggerWriter.LogAndConsole($"ВНИМАНИЕ!При попытке обновления времени произошла ошибка! {ex}\n");
+            }
         }
 
 
         public static DateTime GetNetworkTime()
         {
+            LoggerWriter.LogAndConsole($"Вызыван GetNetworkTime");
             //default Windows time server
             const string ntpServer = "time.windows.com";
 
@@ -64,12 +73,14 @@ namespace TradeController.Sources.Common
             //**UTC** time
             var networkDateTime = (new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc)).AddMilliseconds((long)milliseconds);
 
+            LoggerWriter.LogAndConsole($"GetNetworkTime завершен");
             return networkDateTime.ToLocalTime();
         }
 
         // stackoverflow.com/a/3294698/162671
         static uint SwapEndianness(ulong x)
         {
+            LoggerWriter.LogAndConsole($"Вызвван SwapEndianness");
             return (uint)(((x & 0x000000ff) << 24) +
                            ((x & 0x0000ff00) << 8) +
                            ((x & 0x00ff0000) >> 8) +

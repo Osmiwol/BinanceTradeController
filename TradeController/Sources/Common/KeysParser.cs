@@ -9,6 +9,7 @@ namespace TradeController.Sources.Common
 
         public static string[] GetKeys(string text)
         {
+            LoggerWriter.LogAndConsole("GetKeys");
             string[] keys = new string[0];
             if (text == null || text.Length < 64) return keys;
 
@@ -19,7 +20,7 @@ namespace TradeController.Sources.Common
             string closeKey = text.Substring((enterPosition + 2), text.Length - (enterPosition + 2));
 
             keys = new string[2] { openKey, closeKey };
-
+            LoggerWriter.LogAndConsole("GetKeys завершен");
             return keys;
         }
 

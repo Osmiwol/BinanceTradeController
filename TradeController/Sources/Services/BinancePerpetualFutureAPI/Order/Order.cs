@@ -22,6 +22,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
         string parSignature = "signature=";
         public Order(string url, string openKey,string closeKey)
         {
+            LoggerWriter.LogAndConsole("создан экземпляр класса Order");
             this.url = url;
             this.openKey = openKey;
             this.closeKey = closeKey;
@@ -29,6 +30,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 
         public string CancelAllOpenOrders(string symbol)
         {
+            LoggerWriter.LogAndConsole("CancelAllOpenOrders");
             string local = "/fapi/v1/allOpenOrders?";
 
             timeStamp = TimeManager.GetTimeStamp();
@@ -40,11 +42,13 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
 
             request = Common.CreateRequest("DELETE", url, fullPath, openKey);
 
+            LoggerWriter.LogAndConsole("CancelAllOpenOrders завершен");
             return ResponseConverter.GetResponse(request);
         }
 
         public string CurrentAllOpenOrders(string symbol="")
         {
+            LoggerWriter.LogAndConsole("CurrentAllOpenOrders");
             string local = "/fapi/v1/openOrders?";
 
             timeStamp = TimeManager.GetTimeStamp();
@@ -60,7 +64,8 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI.Order
             string fullPath = local + fullParameters;
 
             request = Common.CreateRequest("GET", url, fullPath, openKey);
-
+            
+            LoggerWriter.LogAndConsole("CurrentAllOpenOrders завершен");
             return ResponseConverter.GetResponse(request);
         }
         
