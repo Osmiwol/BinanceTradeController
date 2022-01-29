@@ -39,10 +39,21 @@ namespace TradeController
 
         private void btnAction_Click(object sender, RoutedEventArgs e)
         {
+            
+            
             LoggerWriter.LogAndConsole("Нажата кнопка запуск");
 
             if (!_actionMode)
             {
+                try
+                {
+                    TimeUpdator.SetTimeToCurrent();
+                }
+                catch (Exception ex)
+                {
+                    tbInfo.Text = $"При попытке установки текущего времени возникла ошибка: {ex}\nСвяжитесь с разработчиком!";
+                }
+
                 LoggerWriter.LogAndConsole("\nМониторинг запущен");
                 cts = new CancellationTokenSource();
                 

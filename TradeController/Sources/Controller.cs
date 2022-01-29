@@ -33,8 +33,8 @@ namespace TradeController.Sources
         CloseAllPositions closer;
         
         
-        //string url = "https://testnet.binancefuture.com"; //тестовый url
-        string url = "https://fapi.binance.com";
+        string url = "https://testnet.binancefuture.com"; //тестовый url
+        //string url = "https://fapi.binance.com";
         //
         CloseAllPositions cl;
         AccountInformationService accountInfo;
@@ -148,7 +148,7 @@ namespace TradeController.Sources
             
             LoggerWriter.LogAndConsole(log);
             iteration = 1;
-            string result;
+            string result="";
 
             
             accountInfo.SetParameters(url, keys[0], keys[1]);            
@@ -180,7 +180,18 @@ namespace TradeController.Sources
                     LoggerWriter.LogAndConsole("isCloseOrdersWasCalled Завершено успешно!");
                 }
                 LoggerWriter.LogAndConsole("Происходит получение баланса фьючерсного аккаунта");
-                result = accountInfo.GetAccountBalances();
+                
+                try
+                {
+                    result = accountInfo.GetAccountBalances();    
+                }
+                catch(Exception ex)
+                {
+                    LoggerWriter.LogAndConsole("ВНИМАНИЕ!При попытке result = accountInfo.GetAccountBalances(); произошла ошибка!\n\tТут вылетало, но сейчас должно работать ок:\n"+ex);
+                    continue;
+                }
+
+                if (result == null || result.Length < 1) continue;
 
                 if (ResponseConverter.IsResponseBalance(result))
                 {
@@ -290,7 +301,7 @@ namespace TradeController.Sources
                 LoggerWriter.LogAndConsole($"Закрытие открытых позиций в цикле, количество позиций: {positions.Count}");
                 while (positions.Count > 0)
                 {
-
+                    if (_ct.IsCancellationRequested) break;
                     string closePositionsResult = dealCloser.CloseDeals(positions);
                     if (closePositionsResult != "")
                         _dataFieldShow?.Invoke($"\nВНИМАНИЕ! Трейдер привысил допустимый предел трат! \nФьючерсные заявки были закрыты! :{DateTime.Now}\n");
@@ -342,6 +353,8 @@ namespace TradeController.Sources
             
             if (!(result.Contains("code") && result.Contains("msg"))) return;
             ErrorData error = new ErrorData();
+            error.code = -2022;
+            error.asset = "defaultAsset";
             try
             {
                 error = JsonConvert.DeserializeObject<ErrorData>(result);
@@ -351,7 +364,9 @@ namespace TradeController.Sources
                 LoggerWriter.LogAndConsole($"ВНИМАНИЕ!При попытке спарсить ошибку произошла ошибка!: {ex}");
             }
             _dataFieldShow?.Invoke($"\nВНИМАНИЕ, ОШИБКА!:\n");
+            LoggerWriter.LogAndConsole($"\nВНИМАНИЕ, ОШИБКА!:\n");
             _dataFieldShow?.Invoke($"Код ошибки: { error.code}\n Текст ошибки: { error.asset}\n");
+            LoggerWriter.LogAndConsole($"Код ошибки: { error.code}\n Текст ошибки: { error.asset}\n");
             switch (error.code)
             {
                 case (-1021):

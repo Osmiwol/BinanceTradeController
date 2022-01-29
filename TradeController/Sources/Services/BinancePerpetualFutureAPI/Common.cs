@@ -18,6 +18,7 @@ namespace TradeController.Sources.Services.BinancePerpetualFutureAPI
             request.Headers.Add(HttpRequestHeader.Accept, "*/*");
             request.Headers.Add(HttpRequestHeader.Connection, "keep-alive");
             request.Date = DateTime.Now;
+            request.Timeout = 2000;
 
             LoggerWriter.LogAndConsole("CreateRequest завершен");
             return request;
